@@ -2,9 +2,12 @@
 #include"stdio.h"
 #include<fstream>
 #include<map>
+#include<string>
+#include<vector>
 using std::ifstream;
-using std::string;
 using std::map;
+using std::string;
+using std::vector;
 const static string whitespaces(" \t\f\v\n\r");
 FileParser::FileParser(const string &filename) {
 	string s="in."+filename+".txt";
@@ -27,10 +30,7 @@ FileParser::FileParser(const string &filename) {
 			value="1";
 		}
 		else {
-			r2=line.find_first_of(whitespaces,l2);
-			if (r2==string::npos) {
-				r2=line.length();
-			}
+			r2=line.find_last_not_of(whitespaces)+1;
 			value=line.substr(l2,r2-l2);
 		}
 		m[key]=value;
@@ -39,17 +39,28 @@ FileParser::FileParser(const string &filename) {
 string FileParser::getString(const string &key) const {
 	return m.at(key);
 }
+int FileParser::getInt(const std::string &key) const {
+	const char *p=m.at(key).c_str();
+	int x;
+	sscanf(p,"%d",&x);
+	return x;
+}
 double FileParser::getDouble(const std::string &key) const {
 	const char *p=m.at(key).c_str();
 	double x;
 	sscanf(p,"%lf",&x);
 	return x;
 }
-int FileParser::getInt(const std::string &key) const {
+vector<double> FileParser::getDoubleVector(const std::string &key) const {
 	const char *p=m.at(key).c_str();
-	int x;
-	sscanf(p,"%d",&x);
-	return x;
+	vector<double> v;
+	int n;
+	double x;
+	while (sscanf(p,"%lf%n",&x,&n)!=EOF) {
+		v.push_back(x);
+		p+=n;
+	}
+	return v;
 }
 class ConfigLib {
 	public:

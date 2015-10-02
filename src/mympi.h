@@ -1,3 +1,4 @@
+#pragma once
 #include<mpi.h>
 #include<pthread.h>
 #include<stdlib.h>
@@ -10,6 +11,11 @@ enum MPI_TAG {
 	MPI_MEMORY_READY,
 	MPI_SYNC,
 	MPI_SINGLETHREAD,
+};
+class MpiGlobalInstance {
+	public:
+		MpiGlobalInstance();
+		~MpiGlobalInstance();
 };
 void mpiSync();
 class MpiSharedMemory {

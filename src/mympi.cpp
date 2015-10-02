@@ -7,24 +7,28 @@
 #include"mympi.h"
 using std::vector;
 using std::string;
-class MpiGlobal {
-	public:
-		MpiGlobal();
-		~MpiGlobal();
-		int size,rank;
+struct MpiGlobal {
+	int size,rank;
 };
-MpiGlobal::MpiGlobal() {
-	int argc=0;
-	char **argv=new char*[0];
-	delete[] argv;
-	MPI_Init(&argc,&argv);
-	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-	MPI_Comm_size(MPI_COMM_WORLD,&size);
-}
-MpiGlobal::~MpiGlobal() {
-	MPI_Finalize();
-}
 static MpiGlobal mpiGlobal;
+static int globalInstanceCount=0;
+MpiGlobalInstance::MpiGlobalInstance() {
+	if (globalInstanceCount==0) {
+		int argc=0;
+		char **argv=new char*[0];
+		MPI_Init(&argc,&argv);
+		delete[] argv;
+		MPI_Comm_rank(MPI_COMM_WORLD,&mpiGlobal.rank);
+		MPI_Comm_size(MPI_COMM_WORLD,&mpiGlobal.size);
+	}
+	globalInstanceCount++;
+}
+MpiGlobalInstance::~MpiGlobalInstance() {
+	globalInstanceCount--;
+	if (globalInstanceCount==0) {
+		MPI_Finalize();
+	}
+}
 void mpiSync() {
 	if (mpiGlobal.size==1) {
 		return ;

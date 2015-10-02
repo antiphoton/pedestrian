@@ -14,18 +14,12 @@ Vector2::Vector2(const Vector2 &v) {
 ostream & operator << (ostream & cout,const Vector2 &v) {
 	return cout<<"("<<v.x<<","<<v.y<<")";
 }
-Rect2::Rect2(double left,double top,double right,double bottom):min(left,top),max(right,bottom) {
+Rect2::Rect2(double left,double top,double right,double bottom):left(left),top(top),right(right),bottom(bottom) {
 }
 double Rect2::width() const {
-	return max.x-min.x;
+	return right-left;
 }
 double Rect2::height() const {
-	return max.y-min.y;
+	return bottom-top;
 }
-Vector2 Rect2::screenToClient(const Vector2 v) const {
-	Vector2 ret(
-		(v.x-min.x)/width(),
-		(v.y-min.y)/height()
-	);
-	return ret;
-}
+
