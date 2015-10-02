@@ -3,7 +3,6 @@ Person *people;
 class PersonInitializer {
 	public:
 		PersonInitializer() {
-			MpiSharedMemory aaa(100);
 		};
 		~PersonInitializer() {
 		}
