@@ -1,10 +1,10 @@
 #include<math.h>
 #include<string.h>
-#include<ctime>
 #include<errno.h>
 #include<sys/ipc.h>
 #include<sys/shm.h>
 #include"mympi.h"
+#include"mytime.h"
 using std::vector;
 using std::string;
 struct MpiGlobal {
@@ -57,14 +57,6 @@ void normalizeVector(vector<double> &a) {
 	for (i=0;i<n;i++) {
 		a[i]/=r;
 	}
-}
-double myTimediff(timespec t1,timespec t2) {
-	return (t1.tv_sec-t2.tv_sec)+(t1.tv_nsec-t2.tv_nsec)*1e-9;
-}
-timespec getTime() {
-	timespec now;
-	clock_gettime(CLOCK_REALTIME,&now);
-	return now;
 }
 class TaskManagerReport {
 	public:
@@ -164,7 +156,7 @@ void MpiTaskManager::listen() {
 			}
 		}
 		if (cpuLastTask[i]!=-1) {
-			double delta=myTimediff(now,cpuStarttime[i]);
+			double delta=timeDiff(now,cpuStarttime[i]);
 			cost1+=delta;
 			cost2+=delta*delta;
 			nFinished++;
@@ -181,7 +173,7 @@ void MpiTaskManager::listen() {
 			if (cpuWaiting[i]) {
 				continue;
 			}
-			totalStarted+=myTimediff(now,cpuStarttime[i]);
+			totalStarted+=timeDiff(now,cpuStarttime[i]);
 		}
 		double estimated=(mu*(count-nFinished)-totalStarted)/(mpiGlobal.size-1);
 		if (estimated<=99) {
@@ -234,7 +226,7 @@ void *MpiSharedMemory::address() const {
 }
 pthread_mutex_t *SingleThreadLocker::pMutex;
 const int SingleThreadLocker::WORKING_RANK=1;
-SingleThreadLocker::SingleThreadLocker(bool includingHead):includingHead(includingHead) {
+SingleThreadLocker::SingleThreadLocker(bool includingHead):includingHead(includingHead),finished(false) {
 	if (mpiGlobal.size==1) {
 		return ;
 	}
@@ -258,6 +250,10 @@ SingleThreadLocker::SingleThreadLocker(bool includingHead):includingHead(includi
 	}
 }
 bool SingleThreadLocker::myDuty() {
+	if (finished) {
+		return false;
+	}
+	finished=true;
 	if (mpiGlobal.size==1) {
 		return true;
 	}

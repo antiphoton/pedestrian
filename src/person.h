@@ -3,5 +3,5 @@
 struct Person {
 	Vector2 position,velocity;
 };
-extern Person* people;
+extern MpiSharedArray<Person> *people;
 

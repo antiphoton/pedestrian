@@ -30,6 +30,9 @@ template<typename T> class MpiSharedArray:MpiSharedMemory {
 	public:
 		MpiSharedArray(int size):MpiSharedMemory(sizeof(T)*size) {
 		}
+		inline T & at(int i) {
+			return *address(i);
+		}
 		inline T & operator [] (int i) {
 			return *address(i);
 		}
@@ -76,8 +79,9 @@ class SingleThreadLocker {
 		static pthread_mutex_t *pMutex;
 		const bool includingHead;
 		static const int WORKING_RANK;
+		bool finished;
 };
-#define SINGLERUN(f) {SingleThreadLocker __cbxLocker__; if (__cbxLocker__.myDuty()) {f}}
+#define SINGLERUN if (0) ; else for (SingleThreadLocker __cbxLocker__;__cbxLocker__.myDuty();)
 class MpiTaskManager {
 	public:
 		MpiTaskManager(const std::string &tag,int count,double supposedCost);

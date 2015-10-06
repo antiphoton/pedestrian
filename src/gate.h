@@ -1,7 +1,11 @@
 #pragma once
 #include<vector>
+#include"mymath.h"
 struct GateSource {
-	double x,y,r;
+	Vector2 position;
+	double r;
+	double p;
+	int q;
 };
 struct GateSink {
 	double x,y,r;
@@ -12,6 +16,8 @@ class Gates {
 		~Gates();
 		void update();
 	private:
+		void updateSource();
+		void updateSink();
 		int nSource,nSink;
 		GateSource *aSource;
 		GateSink *aSink;
