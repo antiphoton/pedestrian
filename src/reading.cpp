@@ -8,8 +8,8 @@ using std::ifstream;
 using std::map;
 using std::string;
 using std::vector;
-const static string whitespaces(" \t\f\v\n\r");
 FileParser::FileParser(const string &filename) {
+	const static string whitespaces(" \t\f\v\n\r");
 	string s="in."+filename+".txt";
 	ifstream f(s.c_str());
 	string line;
@@ -83,8 +83,13 @@ const FileParser *ConfigLib::read(const string &filename) {
 	}
 	return m.at(filename);
 }
-static ConfigLib configLib;
+static ConfigLib *configLib=0;
 const FileParser *readConfig(const string &filename) {
-	return configLib.read(filename);
+	if (configLib==0) {
+		configLib=new ConfigLib();
+	}
+	const FileParser *ret=configLib->read(filename);
+	return ret;
+	return configLib->read(filename);
 }
 

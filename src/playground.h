@@ -14,12 +14,10 @@ class Playground {
 		int indexBegin(const CellVector &cv) const;
 		int indexEnd(const CellVector &cv) const;
 		int getNextPerson(int x) const;
-		int getEmptySlot() const;
 		void addPerson(int personId);
 	private:
 		CellVector getCellVector(const Vector2 &p) const;
 		MpiSharedArray<int> *linkPrior,*linkNext;
-		MpiSharedArray<bool> *exist;
 		std::vector<CellVector> **pNeighbourCells;
 		double width,height;
 		int maxPeople;

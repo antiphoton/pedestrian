@@ -64,7 +64,7 @@ void Gates::updateSource() {
 			gs.q++;
 		}
 		if (c==0&&gs.q>0) {
-			int personId=playground.getEmptySlot();
+			int personId=getPersonSlot();
 			if (personId>=0) {
 				people->at(personId).position.set(gs.position);
 				playground.addPerson(personId);

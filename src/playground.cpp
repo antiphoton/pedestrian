@@ -47,17 +47,10 @@ Playground::Playground() {
 			}
 		}
 	}
-	exist=new MpiSharedArray<bool>(maxPeople);
-	SINGLERUN{
-		for (int i=0;i<maxPeople;i++) {
-			*(exist->address(i))=false;
-		}
-	}
 }
 Playground::~Playground() {
 	delete linkPrior;
 	delete linkNext;
-	delete exist;
 }
 const vector<CellVector> *Playground::getNeighbourCells(const Vector2 &p) const {
 	int y=p.y/stepY;
@@ -73,20 +66,8 @@ int Playground::indexEnd(const CellVector &cv) const {
 int Playground::getNextPerson(int x) const {
 	return *(linkNext->address(x));
 }
-int Playground::getEmptySlot() const {
-	int i;
-	for (i=0;i<maxPeople;i++) {
-		if (exist->at(i)==false) {
-			break;
-		}
-	}
-	if (i==maxPeople) {
-		return -1;
-	}
-	exist->at(i)=true;
-	return i;
-}
 void Playground::addPerson(int personId) {
+	people->at(personId).exist=true;
 	CellVector cv=getCellVector(people->at(personId).position);
 	int p3=indexEnd(cv);
 	int p1=*(linkPrior->address(p3));
