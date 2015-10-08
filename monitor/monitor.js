@@ -50,7 +50,7 @@
 				person['attr']('display','none');
 				people['push'](person);
 			}
-			switchFrame(80);
+			switchFrame(0);
 		}
 	})();
 	var switchFrame=(function() {
@@ -63,7 +63,7 @@
 				lastFrame=iFrame;
 			}
 			var pos=data['position'][iFrame];
-			var n=Math['max'](people['length'],pos['length']);
+			var n=people['length'];
 			var i;
 			for (i=0;i<n;i++) {
 				if (pos[i]!==undefined) {
@@ -76,6 +76,49 @@
 			}
 		};
 	})();
+	var createDraggable=function() {
+		var obj=d3['select']('body')['append']('span');
+		var xObj=0,yObj=0;
+		obj['classed']('movable',true);
+		obj['style']({'position':'fixed','top':xObj,'left':yObj});
+		var dragging=false;
+		var xLast,yLast;
+		var beginMove=function() {
+			if (d3.select(d3.event.target).classed('unmovable')) {
+				return ;
+			}
+			dragging=true;
+		};
+		var endMove=function() {
+			dragging=false;
+		}
+		var updateMove=function() {
+			var event=d3['event'];
+			var xCurrent=event['clientX'];
+			var yCurrent=event['clientY'];
+			if (dragging===true) {
+				xObj+=xCurrent-xLast;
+				yObj+=yCurrent-yLast;
+				obj['style']('left',xObj+'px');
+				obj['style']('top',yObj+'px');
+			}
+			xLast=xCurrent;
+			yLast=yCurrent;
+
+		};
+		obj['on']('mousedown',function() {
+			updateMove();
+			beginMove();
+		});
+		obj['on']('mousemove',function() {
+			updateMove();
+		});
+		obj['on']('mouseup',function() {
+			updateMove();
+			endMove();
+		});
+		return obj;
+	};
 	var createControll=(function() {
 		var container;
 		var btnLeft,btnRight;
@@ -95,11 +138,10 @@
 			switchFrame(iFrame);
 		};
 		return function() {
-			container=d3['select']('body')['append']('span');
-			container['classed']('control',true);
-			btnLeft=container['append']('button');
+			container=createDraggable();
+			btnLeft=container['append']('button')['classed']('unmovable',true);
 			txtIndex=container['append']('span');
-			btnRight=container['append']('button');
+			btnRight=container['append']('button')['classed']('unmovable',true);
 			btnLeft['text']('<');
 			btnRight['text']('>');
 			txtIndex['text'](currentFrame);
@@ -109,6 +151,7 @@
 			btnRight['on']('click',function() {
 				setFrame(currentFrame+1);
 			});
+			container['style']({'position':'fixed','top':0,'right':0});
 		};
 	})();
 	var checkBoth=(function() {

@@ -3,7 +3,11 @@ html body {
 	overflow:hidden
 }
 span.control {
-	position:fixed;
-	top:0;
-	right:0;
+	position:fixed
+}
+.movable {
+	cursor:move
+}
+.movable .unmovable {
+	cursor:default
 }
