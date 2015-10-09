@@ -1,9 +1,10 @@
-#include"reading.h"
-#include"stdio.h"
+#include<string.h>
 #include<fstream>
 #include<map>
 #include<string>
 #include<vector>
+#include"reading.h"
+#include"stdio.h"
 using std::ifstream;
 using std::map;
 using std::string;
@@ -39,19 +40,31 @@ FileParser::FileParser(const string &filename) {
 string FileParser::getString(const string &key) const {
 	return m.at(key);
 }
-int FileParser::getInt(const std::string &key) const {
+int FileParser::getInt(const string &key) const {
 	const char *p=m.at(key).c_str();
 	int x;
 	sscanf(p,"%d",&x);
 	return x;
 }
-double FileParser::getDouble(const std::string &key) const {
+double FileParser::getDouble(const string &key) const {
 	const char *p=m.at(key).c_str();
 	double x;
 	sscanf(p,"%lf",&x);
 	return x;
 }
-vector<double> FileParser::getDoubleVector(const std::string &key) const {
+vector<string> FileParser::getStringVector(const string &key) const {
+	const char *p=m.at(key).c_str();
+	vector<string> v;
+	int n;
+	char *x=new char(strlen(p)+1);
+	while (sscanf(p,"%s%n",x,&n)!=EOF) {
+		v.push_back(x);
+		p+=n;
+	}
+	delete x;
+	return v;
+}
+vector<double> FileParser::getDoubleVector(const string &key) const {
 	const char *p=m.at(key).c_str();
 	vector<double> v;
 	int n;

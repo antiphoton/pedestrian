@@ -1,7 +1,7 @@
+#include"mymath.h"
 #include"reading.h"
 #include"person.h"
 #include"trajectory.h"
-static int maxPeople;
 Trajectory trajectory;
 Trajectory::Trajectory() {
 	SINGLERUN{
@@ -15,7 +15,7 @@ Trajectory::Trajectory() {
 		fprintf(file,"\"height\":%f,\n",playground->getDouble("height"));
 		fprintf(file,"\"maxPeople\":%d\n",playground->getInt("maxPeople"));
 		fprintf(file,"},\n");
-		fprintf(file,"\"position\":[\n");
+		fprintf(file,"\"frames\":[\n");
 	}
 }
 Trajectory::~Trajectory() {
@@ -28,20 +28,45 @@ void Trajectory::snapshot() {
 	if (iFrame>0) {
 		fprintf(file,",\n");
 	}
-	fprintf(file,"[");
-	int last=0;
-	int i,j;
+	fprintf(file,"{");
+	Base64Json *bj;
+	int i;
+	fprintf(file,"\"exist\":\"");
+	bj=new Base64Json(file,sizeof(bool));
 	for (i=0;i<maxPeople;i++) {
 		const Person &p=people->at(i);
-		if (p.exist) {
-			for (j=last;j<i;j++) {
-				fprintf(file,",");
-			}
-			fprintf(file,"[%f,%f]",p.position.x,p.position.y);
-			last=i;
-		}
+		bj->push(&(p.exist));
 	}
-	fprintf(file,"]");
+	delete bj;
+	fprintf(file,"\"");
+	fprintf(file,",");
+	fprintf(file,"\"position\":\"");
+	bj=new Base64Json(file,sizeof(Vector2));
+	for (i=0;i<maxPeople;i++) {
+		const Person &p=people->at(i);
+		bj->push(&(p.position));
+	}
+	delete bj;
+	fprintf(file,"\"");
+	fprintf(file,",");
+	fprintf(file,"\"velocity\":\"");
+	bj=new Base64Json(file,sizeof(Vector2));
+	for (i=0;i<maxPeople;i++) {
+		const Person &p=people->at(i);
+		bj->push(&(p.velocity));
+	}
+	delete bj;
+	fprintf(file,"\"");
+	fprintf(file,",");
+	fprintf(file,"\"acceleration\":\"");
+	bj=new Base64Json(file,sizeof(Vector2));
+	for (i=0;i<maxPeople;i++) {
+		const Person &p=people->at(i);
+		bj->push(&(p.acceleration));
+	}
+	delete bj;
+	fprintf(file,"\"");
+	fprintf(file,"}");
 	iFrame++;
 }
 

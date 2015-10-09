@@ -177,14 +177,14 @@ void MpiTaskManager::listen() {
 		}
 		double estimated=(mu*(count-nFinished)-totalStarted)/(mpiGlobal.size-1);
 		if (estimated<=99) {
-			printf("Estimated Remaining: %2d seconds            \r",(int)(estimated+0.5));
+			//printf("Estimated Remaining: %2d seconds            \r",(int)(estimated+0.5));
 		}
 		else {
 			time_t f=now.tv_sec+now.tv_nsec/1e9+estimated+0.5;
 			tm *timeinfo=localtime(&f);
 			char timeBuffer[256];
 			strftime(timeBuffer,256,"%F %X",timeinfo);
-			printf("Estiamted Time:     %s\r",timeBuffer);
+			//printf("Estiamted Time:     %s\r",timeBuffer);
 		}
 		cpuLastTask[stat.MPI_SOURCE]=ret;
 		cpuStarttime[stat.MPI_SOURCE]=now;

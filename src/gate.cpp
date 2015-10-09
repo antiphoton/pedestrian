@@ -27,8 +27,8 @@ Gates::Gates() {
 		aSource[i].q=0;
 	}
 	for (i=0;i<nSink;i++) {
-		aSink[i].x=xSink[i];
-		aSink[i].y=ySink[i];
+		aSink[i].position.x=xSink[i];
+		aSink[i].position.y=ySink[i];
 		aSink[i].r=rSink[i];
 	}
 }
@@ -38,6 +38,7 @@ Gates::~Gates() {
 }
 void Gates::update() {
 	updateSource();
+	updateSink();
 }
 void Gates::updateSource() {
 	const vector<CellVector> *pNC;
@@ -60,7 +61,7 @@ void Gates::updateSource() {
 				}
 			}
 		}
-		if (rand()<gs.p*RAND_MAX) {
+		if (randomEvent(gs.p)) {
 			gs.q++;
 		}
 		if (c==0&&gs.q>0) {
@@ -75,6 +76,26 @@ void Gates::updateSource() {
 	}
 }
 void Gates::updateSink() {
+	const vector<CellVector> *pNC;
+	int i,j,k;
+	for (i=0;i<nSink;i++) {
+		GateSink &gs=aSink[i];
+		pNC=playground.getNeighbourCells(gs.position);
+		for (j=0;j<(int)pNC->size();j++) {
+			int kBegin=playground.indexBegin(pNC->at(j));
+			int kEnd=playground.indexEnd(pNC->at(j));
+			k=kBegin;
+			while (1) {
+				k=playground.getNextPerson(k);
+				if (k==kEnd) {
+					break;
+				}
+				if (people->at(k).position.disSqr(gs.position)<=sqr(gs.r)) {
+					playground.deletePerson(k);
+				}
+			}
+		}
+	}
 }
 Gates gates;
 

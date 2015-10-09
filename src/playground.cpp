@@ -5,6 +5,9 @@
 using std::vector;
 CellVector::CellVector(int y,int x):y(y),x(x) {
 }
+bool CellVector::operator == (const CellVector &that) const {
+	return this->y==that.y&&this->x==that.x;
+}
 Playground::Playground() {
 	const FileParser *config=readConfig("playground");
 	width=config->getDouble("width");
@@ -39,6 +42,7 @@ Playground::Playground() {
 	stepY=height/nY;
 	linkPrior=new MpiSharedArray<int>(maxPeople+nX*nY*2);
 	linkNext=new MpiSharedArray<int>(maxPeople+nX*nY*2);
+	assignedCells=new MpiSharedArray<CellVector>(maxPeople);
 	SINGLERUN{
 		for (int y=0;y<nY;y++) {
 			for (int x=0;x<nX;x++) {
@@ -67,8 +71,36 @@ int Playground::getNextPerson(int x) const {
 	return *(linkNext->address(x));
 }
 void Playground::addPerson(int personId) {
+	if (people->at(personId).exist==true) {
+		return ;
+	}
 	people->at(personId).exist=true;
 	CellVector cv=getCellVector(people->at(personId).position);
+	assignedCells->at(personId)=cv;
+	addPersonLink(personId,cv);
+}
+void Playground::updatePerson(int personId) {
+	if (people->at(personId).exist==false) {
+		return ;
+	}
+	CellVector cv2=getCellVector(people->at(personId).position);
+	if (assignedCells->at(personId)==cv2) {
+	}
+	else {
+		deletePersonLink(personId);
+		addPersonLink(personId,cv2);
+		assignedCells->at(personId)=cv2;
+	}
+
+}
+void Playground::deletePerson(int personId) {
+	if (people->at(personId).exist==false) {
+		return ;
+	}
+	people->at(personId).exist=false;
+	deletePersonLink(personId);
+}
+void Playground::addPersonLink(int personId,const CellVector &cv) {
 	int p3=indexEnd(cv);
 	int p1=*(linkPrior->address(p3));
 	const int p2=personId;
@@ -76,6 +108,13 @@ void Playground::addPerson(int personId) {
 	*(linkPrior->address(p2))=p1;
 	*(linkNext->address(p2))=p3;
 	*(linkPrior->address(p3))=p2;
+}
+void Playground::deletePersonLink(int personId) {
+	int p2=personId;
+	int p1=linkPrior->at(p2);
+	int p3=linkNext->at(p2);
+	linkNext->at(p1)=p3;
+	linkPrior->at(p3)=p1;
 }
 CellVector Playground::getCellVector(const Vector2 &p) const {
 	return CellVector(p.y/stepY,p.x/stepX);

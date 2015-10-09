@@ -1,8 +1,20 @@
+#include<math.h>
 #include"reading.h"
 #include"mympi.h"
 #include"person.h"
 MpiSharedArray<Person> *people;
-static int maxPeople;
+int maxPeople;
+void Person::think() {
+	velocity.set(0.2,0.0);
+};
+void Person::move() {
+	const static double width=readConfig("playground")->getDouble("width");
+	const static double height=readConfig("playground")->getDouble("height");
+	velocity+=acceleration;
+	position+=velocity;
+	position.x-=floor(position.x/width)*width;
+	position.y-=floor(position.y/height)*height;
+};
 class PersonInitializer {
 	public:
 		PersonInitializer() {

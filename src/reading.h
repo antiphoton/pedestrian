@@ -7,6 +7,7 @@ class FileParser {
 		std::string getString(const std::string &key) const;
 		int getInt(const std::string &key) const;
 		double getDouble(const std::string &key) const;
+		std::vector<std::string> getStringVector(const std::string &key) const;
 		std::vector<double> getDoubleVector(const std::string &key) const;
 	private:
 		std::map<std::string,std::string> m;

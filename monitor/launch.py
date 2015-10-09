@@ -14,6 +14,8 @@ if os.fork():
 	httpd.serve_forever()
 else:
 	url='/opt/chromium/chrome --incognito 127.0.0.1:%d/monitor.html' % PORT;
-	print(url);
-	#os.system(url);
+	if os.environ['DISPLAY']:
+		os.system(url);
+	else:
+		print(url);
 

@@ -1,16 +1,37 @@
 (function() {
 	var data;
+	var parseBase64=(function() {
+		var parseByte=function(s) {
+			return base64js['toByteArray'](s);
+		};
+		var parseFloat64=function(s) {
+			var a=base64js['toByteArray'](s);
+			return new Float64Array(a['buffer']);
+		}
+		return function() {
+			data['frames']['forEach'](function (frame) {
+				frame['exist']=parseByte(frame['exist']);
+				frame['position']=parseFloat64(frame['position']);
+				frame['velocity']=parseFloat64(frame['velocity']);
+				frame['acceleration']=parseFloat64(frame['acceleration']);
+			});
+		}
+	})();
 	d3['json'](
 		'./out.trajectory.json',
 		function(a) {
 			if (a) {
 				data=a;
+				maxPeople=data['playground']['maxPeople'];
+				totalFrame=data['frames']['length'];
+				parseBase64();
 				checkBoth();
 			}
 		}
 	);
 	var svg;
 	var people=[];
+	var maxPeople,totalFrame;
 	var createSvg=(function() {
 		var container;
 		var playgroundWidth,playgroundHeight;
@@ -41,7 +62,6 @@
 			playgroundHeight=data['playground']['height'];
 			onResize();
 			window['onresize']=onResize;
-			var maxPeople=data['playground']['maxPeople'];
 			var i;
 			var person;
 			for (i=0;i<maxPeople;i++) {
@@ -62,13 +82,12 @@
 			else {
 				lastFrame=iFrame;
 			}
-			var pos=data['position'][iFrame];
-			var n=people['length'];
 			var i;
-			for (i=0;i<n;i++) {
-				if (pos[i]!==undefined) {
+			var frame=data['frames'][iFrame];
+			for (i=0;i<maxPeople;i++) {
+				if (frame['exist'][i]) {
 					people[i]['attr']('display','inline');
-					people[i]['attr']('transform','translate('+pos[i][0]+','+pos[i][1]+')');
+					people[i]['attr']('transform','translate('+frame['position'][i*2+0]+','+frame['position'][i*2+1]+')');
 				}
 				else {
 					people[i]['attr']('display','none');
@@ -122,36 +141,37 @@
 	var createControll=(function() {
 		var container;
 		var btnLeft,btnRight;
-		var currentFrame=0;
 		var txtIndex;
+		var currentFrame=0;
 		var setFrame=function(iFrame) {
-			if (!(iFrame>=0&&iFrame<data['position']['length'])) {
+			if (!(iFrame>=0&&iFrame<totalFrame)) {
 				return ;
 			}
 			if (iFrame===currentFrame) {
 				return ;
 			}
 			else {
-				currentFrame=iFrame
+				currentFrame=iFrame;
 			}
-			txtIndex['text'](iFrame);
+			txtIndex['text'](iFrame+'/'+totalFrame);
 			switchFrame(iFrame);
 		};
 		return function() {
 			container=createDraggable();
-			btnLeft=container['append']('button')['classed']('unmovable',true);
-			txtIndex=container['append']('span');
-			btnRight=container['append']('button')['classed']('unmovable',true);
+			var line2=container['append']('div');
+			var line3=container['append']('div');
+			txtIndex=line2['append']('span');
+			btnLeft=line3['append']('button')['classed']('unmovable',true);
+			btnRight=line3['append']('button')['classed']('unmovable',true);
 			btnLeft['text']('<');
 			btnRight['text']('>');
-			txtIndex['text'](currentFrame);
+			txtIndex['text'](currentFrame+'/'+totalFrame);
 			btnLeft['on']('click',function() {
 				setFrame(currentFrame-1);
 			});
 			btnRight['on']('click',function() {
 				setFrame(currentFrame+1);
 			});
-			container['style']({'position':'fixed','top':0,'right':0});
 		};
 	})();
 	var checkBoth=(function() {
@@ -174,4 +194,3 @@
 	};
 	return onDomReady;
 })()();
-

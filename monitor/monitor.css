@@ -5,9 +5,9 @@ html body {
 span.control {
 	position:fixed
 }
-.movable {
+span.movable {
 	cursor:move
 }
-.movable .unmovable {
+span.movable .unmovable {
 	cursor:default
 }

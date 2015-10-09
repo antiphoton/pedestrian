@@ -8,7 +8,8 @@ struct GateSource {
 	int q;
 };
 struct GateSink {
-	double x,y,r;
+	Vector2 position;
+	double r;
 };
 class Gates {
 	public:
