@@ -3,9 +3,10 @@
 template<typename T> inline T sqr(T x) {
 	return x*x;
 }
-inline bool randomEvent(double p=0.5) {
+inline bool randomEvent(double p) {
 	return rand()<p*RAND_MAX;
 }
+double normalDistribution(double mu,double sigma);
 struct Vector2;
 struct Rect2;
 template<typename T> inline T min(const T &x1,const T &x2) {
@@ -22,8 +23,11 @@ struct Vector2 {
 	void set(double x,double y);
 	void set(const Vector2 &v);
 	double disSqr(const Vector2 &that) const;
+	Vector2 operator - (const Vector2 &that) const;
 	Vector2 & operator += (const Vector2 &that);
+	Vector2 operator * (double k) const;
 };
+bool intersect(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &vB1,const Vector2 &vB2);
 std::ostream & operator << (std::ostream & cout,const Vector2 &v);
 struct Rect2 {
 	Rect2(double left=0,double top=0,double right=0,double bottom=0);

@@ -12,6 +12,7 @@ enum MPI_TAG {
 	MPI_SYNC,
 	MPI_SINGLETHREAD,
 };
+int getMpiRank();
 class MpiGlobalInstance {
 	public:
 		MpiGlobalInstance();
@@ -53,6 +54,9 @@ template<typename T> class MpiSharedArray2:MpiSharedMemory {
 template<typename T> class MpiSharedArray3:MpiSharedMemory {
 	public:
 		MpiSharedArray3(int s1,int s2,int s3):MpiSharedMemory(sizeof(T)*s1*s2*s3),s1(s1),s2(s2),s3(s3) {
+		}
+		inline T & at(int i1,int i2,int i3) {
+			return *address(i1,i2,i3);
 		}
 		inline T * address(int i1,int i2,int i3) {
 			return (T*)p+i1*(s2*s3)+i2*s3+i3;

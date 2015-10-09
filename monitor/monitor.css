@@ -6,7 +6,11 @@ span.control {
 	position:fixed
 }
 span.movable {
-	cursor:move
+	cursor:move;
+	text-align:center;
+}
+span.movable:hover {
+	background-color:silver;
 }
 span.movable .unmovable {
 	cursor:default

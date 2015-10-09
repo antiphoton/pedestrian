@@ -5,6 +5,7 @@ struct GateSource {
 	Vector2 position;
 	double r;
 	double p;
+	int d;
 	int q;
 };
 struct GateSink {

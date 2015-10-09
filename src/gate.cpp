@@ -11,6 +11,7 @@ Gates::Gates() {
 	vector<double> ySource=config->getDoubleVector("ySource");
 	vector<double> rSource=config->getDoubleVector("rSource");
 	vector<double> pSource=config->getDoubleVector("pSource");
+	vector<double> dSource=config->getDoubleVector("dSource");
 	vector<double> xSink=config->getDoubleVector("xSink");
 	vector<double> ySink=config->getDoubleVector("ySink");
 	vector<double> rSink=config->getDoubleVector("rSink");
@@ -24,6 +25,7 @@ Gates::Gates() {
 		aSource[i].position.y=ySource[i];
 		aSource[i].r=rSource[i];
 		aSource[i].p=pSource[i];
+		aSource[i].d=dSource[i];
 		aSource[i].q=0;
 	}
 	for (i=0;i<nSink;i++) {
@@ -41,6 +43,7 @@ void Gates::update() {
 	updateSink();
 }
 void Gates::updateSource() {
+	const static double timeStep=readConfig("frame")->getDouble("step");
 	const vector<CellVector> *pNC;
 	int i,j,k;
 	for (i=0;i<nSource;i++) {
@@ -61,15 +64,19 @@ void Gates::updateSource() {
 				}
 			}
 		}
-		if (randomEvent(gs.p)) {
+		if (randomEvent(gs.p*timeStep)) {
 			gs.q++;
 		}
 		if (c==0&&gs.q>0) {
 			int personId=getPersonSlot();
 			if (personId>=0) {
 				people->at(personId).position.set(gs.position);
+				people->at(personId).destGate=gs.d;
+				const static double mu=readConfig("person")->getDouble("muSpeed");
+				const static double sigma=readConfig("person")->getDouble("sigmaSpeed");
+				people->at(personId).desiredSpeed=normalDistribution(mu,sigma);
+				printf("%f\n",people->at(personId).desiredSpeed);
 				playground.addPerson(personId);
-				printf("Person %d added by gate %d.\n",personId,i);
 				gs.q--;
 			}
 		}

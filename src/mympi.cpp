@@ -11,6 +11,9 @@ struct MpiGlobal {
 	int size,rank;
 };
 static MpiGlobal mpiGlobal;
+int getMpiRank() {
+	return mpiGlobal.rank;
+}
 static int globalInstanceCount=0;
 MpiGlobalInstance::MpiGlobalInstance() {
 	if (globalInstanceCount==0) {

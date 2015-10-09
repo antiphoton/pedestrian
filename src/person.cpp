@@ -1,17 +1,25 @@
 #include<math.h>
 #include"reading.h"
 #include"mympi.h"
+#include"gravity.h"
 #include"person.h"
 MpiSharedArray<Person> *people;
 int maxPeople;
 void Person::think() {
-	velocity.set(0.2,0.0);
+	if (!exist) {
+		return ;
+	}
+	velocity.set(getGravity(destGate,position)*desiredSpeed);
 };
 void Person::move() {
+	if (!exist) {
+		return ;
+	}
 	const static double width=readConfig("playground")->getDouble("width");
 	const static double height=readConfig("playground")->getDouble("height");
-	velocity+=acceleration;
-	position+=velocity;
+	const static double timeStep=readConfig("frame")->getDouble("step");
+	velocity+=acceleration*timeStep;
+	position+=velocity*timeStep;
 	position.x-=floor(position.x/width)*width;
 	position.y-=floor(position.y/height)*height;
 };

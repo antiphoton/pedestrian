@@ -5,6 +5,14 @@
 #include"mymath.h"
 using std::ostream;
 using std::string;
+double normalDistribution(double mu,double sigma) {
+	const double k=1.0/6/RAND_MAX;
+	const static double sqrt2=sqrt(2);
+	double x=((rand()+rand()+rand()+rand()+rand()+rand())*k-0.5);
+	x*=sqrt2;
+	x=mu+x*sigma;
+	return x;
+}
 Vector2::Vector2(double x,double y):x(x),y(y) {
 }
 Vector2::Vector2(const Vector2 &v) {
@@ -22,10 +30,34 @@ void Vector2::set(const Vector2 &v) {
 double Vector2::disSqr(const Vector2 &that) const {
 	return sqr(this->x-that.x)+sqr(this->y-that.y);
 }
+Vector2 Vector2 :: operator - (const Vector2 &that) const {
+	return Vector2(this->x-that.x,this->y-that.y);
+}
 Vector2 & Vector2::operator += (const Vector2 &that) {
 	this->x+=that.x;
 	this->y+=that.y;
 	return *this;
+}
+Vector2 Vector2::operator *(double k) const {
+	return Vector2(x*k,y*k);
+}
+inline double sameSide(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &p1,const Vector2 &p2) {
+	double yA=vA2.y-vA1.y;
+	double xA=vA2.x-vA1.x;
+	double l2A=yA*yA+xA*xA;
+	double y1=p1.y-vA1.y;
+	double x1=p1.x-vA1.x;
+	double y2=p2.y-vA1.y;
+	double x2=p2.x-vA1.x;
+	double s1=xA*y1-yA*x1;
+	double s2=xA*y2-yA*x2;
+	return s1*s2/l2A;
+}
+bool intersect(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &vB1,const Vector2 &vB2) {
+	const double eps=1e-7;
+	double s1=sameSide(vA1,vA2,vB1,vB2);
+	double s2=sameSide(vB1,vB2,vA1,vA2);
+	return s1<eps&&s2<eps;
 }
 ostream & operator << (ostream & cout,const Vector2 &v) {
 	return cout<<"("<<v.x<<","<<v.y<<")";

@@ -1,8 +1,10 @@
 CC=mpicxx -cxx=g++ -std=c++0x -Wall -O3
-a.out : main.o gate.o mymath.o mympi.o mytime.o person.o playground.o reading.o trajectory.o
-	$(CC) -o a.out main.o gate.o mymath.o mympi.o mytime.o person.o playground.o reading.o trajectory.o
+a.out : main.o gravity.o gate.o mymath.o mympi.o mytime.o person.o playground.o reading.o trajectory.o
+	$(CC) -o a.out main.o gravity.o gate.o mymath.o mympi.o mytime.o person.o playground.o reading.o trajectory.o
 main.o : main.cpp
 	$(CC) -o main.o -c main.cpp
+gravity.o : gravity.cpp
+	$(CC) -o gravity.o -c gravity.cpp
 gate.o : gate.cpp
 	$(CC) -o gate.o -c gate.cpp
 mymath.o : mymath.cpp

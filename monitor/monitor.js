@@ -23,7 +23,7 @@
 			if (a) {
 				data=a;
 				maxPeople=data['playground']['maxPeople'];
-				totalFrame=data['frames']['length'];
+				totalFrame=data['frame']['total'];
 				parseBase64();
 				checkBoth();
 			}
@@ -67,31 +67,37 @@
 			for (i=0;i<maxPeople;i++) {
 				person=svg['append']('circle');
 				person['attr']('r',0.2);
-				person['attr']('display','none');
 				people['push'](person);
 			}
-			switchFrame(0);
+			interpolateFrame(0);
 		}
 	})();
-	var switchFrame=(function() {
-		var lastFrame;
+	var interpolateFrame=(function() {
 		return function(iFrame) {
-			if (iFrame===lastFrame) {
-				return ;
-			}
-			else {
-				lastFrame=iFrame;
-			}
+			var i1=Math['floor'](iFrame);
+			var i2=i1+1;
+			var a1=i2-iFrame;
+			var a2=1-a1;
 			var i;
-			var frame=data['frames'][iFrame];
+			var f1=data['frames'][i1];
+			var f2=data['frames'][i2];
+			var x,y,z;
 			for (i=0;i<maxPeople;i++) {
-				if (frame['exist'][i]) {
-					people[i]['attr']('display','inline');
-					people[i]['attr']('transform','translate('+frame['position'][i*2+0]+','+frame['position'][i*2+1]+')');
+				x=0;
+				y=0;
+				z=0;
+				if (f1['exist'][i]) {
+					x+=f1['position'][i*2  ]*a1;
+					y+=f1['position'][i*2+1]*a1;
+					z+=a1;
 				}
-				else {
-					people[i]['attr']('display','none');
+				if (f2['exist'][i]) {
+					x+=f2['position'][i*2  ]*a2;
+					y+=f2['position'][i*2+1]*a2;
+					z+=a2;
 				}
+				people[i]['attr']('transform','translate('+x/z+','+y/z+')');
+				people[i]['attr']('opacity',z);
 			}
 		};
 	})();
@@ -103,8 +109,17 @@
 		var dragging=false;
 		var xLast,yLast;
 		var beginMove=function() {
-			if (d3.select(d3.event.target).classed('unmovable')) {
-				return ;
+			var e=d3['event']['target'];
+			var s;
+			while (e!=obj[0]) {
+				s=d3['select'](e);
+				if (s['classed']('unmovable')) {
+					return ;
+				}
+				if (s['classed']('movable')) {
+					break;
+				}
+				e=e['parentNode'];
 			}
 			dragging=true;
 		};
@@ -138,40 +153,112 @@
 		});
 		return obj;
 	};
-	var createControll=(function() {
+	var initControl=(function() {
 		var container;
 		var btnLeft,btnRight;
+		var btnForward,btnBackward;
+		var btnPlay;
 		var txtIndex;
-		var currentFrame=0;
-		var setFrame=function(iFrame) {
-			if (!(iFrame>=0&&iFrame<totalFrame)) {
+		var iconPlay;
+		var currentFrameF=0;
+		var lastTime;
+		var playing=false;
+		var timeStep;
+		var speed=1;
+		var getTime=function() {
+			return new Date()['getTime']();
+		};
+		var setFrameF=function(iFrame) {
+			currentFrameF=iFrame;
+			txtIndex['text'](Math['floor'](iFrame)+'/'+totalFrame);
+			interpolateFrame(iFrame);
+		};
+		var render=function() {
+			if (!playing) {
 				return ;
 			}
-			if (iFrame===currentFrame) {
-				return ;
+			var now=getTime();
+			var d=(now-lastTime)*speed/timeStep;
+			setFrameF(currentFrameF+d);
+			lastTime=now;
+		};
+		var animate=function() {
+			render();
+			window['requestAnimationFrame'](animate);
+		};
+		window['requestAnimationFrame'](animate);
+		var onplay=function() {
+			if (playing) {
+				playing=false;
+				iconPlay['classed']('fa-pause',false)['classed']('fa-play',true);
 			}
 			else {
-				currentFrame=iFrame;
+				playing=true;
+				lastTime=getTime();
+				iconPlay['classed']('fa-play',false)['classed']('fa-pause',true);
 			}
-			txtIndex['text'](iFrame+'/'+totalFrame);
-			switchFrame(iFrame);
 		};
-		return function() {
+		var onpause=function() {
+			if (!playing) {
+				return ;
+			}
+		};
+		var initData=function() {
+			timeStep=data['frame']['step']*1000;
+		};
+		var onStepLeft=function() {
+			if (playing) {
+				return ;
+			}
+			setFrameF(currentFrameF-1);
+		};
+		var onStepRight=function() {
+			if (playing) {
+				return ;
+			}
+			setFrameF(currentFrameF+1);
+		};
+		var onFastLeft=function() {
+			if (speed>0) {
+				speed=-1;
+			}
+			else {
+				speed*=2;
+			}
+		};
+		var onFastRight=function() {
+			if (speed<0) {
+				speed=1;
+			}
+			else {
+				speed*=2;
+			}
+		};
+		var drawControl=function() {
 			container=createDraggable();
 			var line2=container['append']('div');
 			var line3=container['append']('div');
 			txtIndex=line2['append']('span');
 			btnLeft=line3['append']('button')['classed']('unmovable',true);
+			btnPlay=line3['append']('button')['classed']('unmovable',true);
 			btnRight=line3['append']('button')['classed']('unmovable',true);
-			btnLeft['text']('<');
-			btnRight['text']('>');
-			txtIndex['text'](currentFrame+'/'+totalFrame);
-			btnLeft['on']('click',function() {
-				setFrame(currentFrame-1);
-			});
-			btnRight['on']('click',function() {
-				setFrame(currentFrame+1);
-			});
+			btnBackward=line3['append']('button')['classed']('unmovable',true);
+			btnForward=line3['append']('button')['classed']('unmovable',true);
+			btnLeft['append']('i')['classed']('fa',true)['classed']('fa-step-backward',true);
+			btnRight['append']('i')['classed']('fa',true)['classed']('fa-step-forward',true);
+			btnForward['append']('i')['classed']('fa',true)['classed']('fa-forward',true);
+			btnBackward['append']('i')['classed']('fa',true)['classed']('fa-backward',true);
+			iconPlay=btnPlay['append']('i')['classed']('fa',true)['classed']('fa-play',true);
+			txtIndex['text'](currentFrameF+'/'+totalFrame);
+			btnLeft['on']('click',onStepLeft);
+			btnRight['on']('click',onStepRight);
+			btnBackward['on']('click',onFastLeft);
+			btnForward['on']('click',onFastRight);
+			btnPlay['on']('click',onplay);
+		};
+		return function() {
+			initData();
+			drawControl();
 		};
 	})();
 	var checkBoth=(function() {
@@ -179,7 +266,7 @@
 		var finished=0;
 		var main=function() {
 			createSvg();
-			createControll();
+			initControl();
 		};
 		return function() {
 			finished++;

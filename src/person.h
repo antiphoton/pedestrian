@@ -3,6 +3,8 @@
 struct Person {
 	Vector2 position,velocity,acceleration;
 	bool exist;
+	int destGate;
+	double desiredSpeed;
 	void think();
 	void move();
 };
