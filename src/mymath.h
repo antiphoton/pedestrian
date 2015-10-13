@@ -22,10 +22,12 @@ struct Vector2 {
 	double x,y;
 	void set(double x,double y);
 	void set(const Vector2 &v);
+	double lengthSqr() const;
 	double disSqr(const Vector2 &that) const;
 	Vector2 operator - (const Vector2 &that) const;
 	Vector2 & operator += (const Vector2 &that);
 	Vector2 operator * (double k) const;
+	double operator & (const Vector2 &that) const;
 };
 bool intersect(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &vB1,const Vector2 &vB2);
 std::ostream & operator << (std::ostream & cout,const Vector2 &v);

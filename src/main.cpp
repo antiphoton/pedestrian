@@ -6,7 +6,7 @@
 #include"playground.h"
 #include"trajectory.h"
 int main(int argc,char **argv) {
-	srand(time(0));
+	srand(0);//time(0));
 	int totalFrame=readConfig("frame")->getInt("total");
 	for (int iFrame=0;iFrame<totalFrame;iFrame++) {
 		MpiTaskManager *manager1=new MpiTaskManager("think",readConfig("playground")->getInt("maxPeople"),1);
@@ -29,6 +29,7 @@ int main(int argc,char **argv) {
 		}
 		delete manager2;
 		SINGLERUN {
+			printf("iFrame=%d\n",iFrame);
 			for (int personId=0;personId<maxPeople;personId++) {
 				playground.updatePerson(personId);
 			}

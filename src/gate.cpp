@@ -70,12 +70,10 @@ void Gates::updateSource() {
 		if (c==0&&gs.q>0) {
 			int personId=getPersonSlot();
 			if (personId>=0) {
+				people->at(personId).reset();
+				people->at(personId).id=personId;
 				people->at(personId).position.set(gs.position);
 				people->at(personId).destGate=gs.d;
-				const static double mu=readConfig("person")->getDouble("muSpeed");
-				const static double sigma=readConfig("person")->getDouble("sigmaSpeed");
-				people->at(personId).desiredSpeed=normalDistribution(mu,sigma);
-				printf("%f\n",people->at(personId).desiredSpeed);
 				playground.addPerson(personId);
 				gs.q--;
 			}

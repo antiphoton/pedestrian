@@ -7,7 +7,6 @@ Trajectory::Trajectory() {
 	SINGLERUN{
 		const FileParser *frame=readConfig("frame");
 		const FileParser *playground=readConfig("playground");
-		maxPeople=playground->getInt("maxPeople");
 		file=fopen("../monitor/out.trajectory.json","w");
 		iFrame=0;
 		fprintf(file,"{\n");

@@ -86,12 +86,12 @@
 				x=0;
 				y=0;
 				z=0;
-				if (f1['exist'][i]) {
+				if (a1>0&&f1['exist'][i]) {
 					x+=f1['position'][i*2  ]*a1;
 					y+=f1['position'][i*2+1]*a1;
 					z+=a1;
 				}
-				if (f2['exist'][i]) {
+				if (a2>0&&f2['exist'][i]) {
 					x+=f2['position'][i*2  ]*a2;
 					y+=f2['position'][i*2+1]*a2;
 					z+=a2;
@@ -170,8 +170,14 @@
 		};
 		var setFrameF=function(iFrame) {
 			currentFrameF=iFrame;
-			txtIndex['text'](Math['floor'](iFrame)+'/'+totalFrame);
-			interpolateFrame(iFrame);
+			if (currentFrameF<0) {
+				currentFrameF=0;
+			}
+			if (currentFrameF>=totalFrame-1) {
+				currentFrameF=totalFrame-1;
+			}
+			txtIndex['text'](Math['floor'](currentFrameF)+'/'+totalFrame);
+			interpolateFrame(currentFrameF);
 		};
 		var render=function() {
 			if (!playing) {

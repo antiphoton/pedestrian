@@ -27,6 +27,9 @@ void Vector2::set(const Vector2 &v) {
 	this->x=v.x;
 	this->y=v.y;
 }
+double Vector2::lengthSqr() const {
+	return sqr(x)+sqr(y);
+}
 double Vector2::disSqr(const Vector2 &that) const {
 	return sqr(this->x-that.x)+sqr(this->y-that.y);
 }
@@ -40,6 +43,9 @@ Vector2 & Vector2::operator += (const Vector2 &that) {
 }
 Vector2 Vector2::operator *(double k) const {
 	return Vector2(x*k,y*k);
+}
+double Vector2::operator &(const Vector2 &that) const {
+	return this->x*that.x+this->y*that.y;
 }
 inline double sameSide(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &p1,const Vector2 &p2) {
 	double yA=vA2.y-vA1.y;
