@@ -11,6 +11,7 @@ class FileParser {
 		std::vector<double> getDoubleVector(const std::string &key) const;
 	private:
 		std::map<std::string,std::string> m;
+		const char *find(const std::string &key) const;
 };
 const FileParser *readConfig(const std::string &filename);
 

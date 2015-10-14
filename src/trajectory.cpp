@@ -1,18 +1,19 @@
 #include"mymath.h"
 #include"reading.h"
+#include"frame.h"
 #include"person.h"
 #include"trajectory.h"
+static FrameInitializer frameInitializer;
 Trajectory trajectory;
 Trajectory::Trajectory() {
 	SINGLERUN{
-		const FileParser *frame=readConfig("frame");
 		const FileParser *playground=readConfig("playground");
 		file=fopen("../monitor/out.trajectory.json","w");
 		iFrame=0;
 		fprintf(file,"{\n");
 		fprintf(file,"\"frame\":{\n");
-		fprintf(file,"\"total\":%f,\n",frame->getDouble("total"));
-		fprintf(file,"\"step\":%f\n",frame->getDouble("step"));
+		fprintf(file,"\"total\":%d,\n",frame.totalPrint);
+		fprintf(file,"\"step\":%f\n",frame.printStep);
 		fprintf(file,"},\n");
 		fprintf(file,"\"playground\":{\n");
 		fprintf(file,"\"width\":%f,\n",playground->getDouble("width"));
@@ -71,6 +72,15 @@ void Trajectory::snapshot() {
 	for (i=0;i<existPeople;i++) {
 		const Person &p=people->at(i);
 		bj->push(&(p.acceleration));
+	}
+	delete bj;
+	fprintf(file,"\"");
+	fprintf(file,",");
+	fprintf(file,"\"destGate\":\"");
+	bj=new Base64Json(file,sizeof(char));
+	for (i=0;i<existPeople;i++) {
+		const Person &p=people->at(i);
+		bj->push(&(p.destGate));
 	}
 	delete bj;
 	fprintf(file,"\"");

@@ -4,6 +4,7 @@ struct Person {
 	int id;
 	Vector2 position,velocity,acceleration;
 	bool exist;
+	bool safeToAdd;
 	int destGate;
 	double desiredSpeed;
 	int walkingFrame;

@@ -27,6 +27,12 @@ void Vector2::set(const Vector2 &v) {
 	this->x=v.x;
 	this->y=v.y;
 }
+void Vector2::setLengthSqr(double l) {
+	double l0=lengthSqr();
+	double k=sqrt(l/l0);
+	x*=k;
+	y*=k;
+}
 double Vector2::lengthSqr() const {
 	return sqr(x)+sqr(y);
 }
@@ -64,6 +70,9 @@ bool intersect(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &vB1,const Ve
 	double s1=sameSide(vA1,vA2,vB1,vB2);
 	double s2=sameSide(vB1,vB2,vA1,vA2);
 	return s1<eps&&s2<eps;
+}
+Vector2 normalDistribution(const Vector2 &mu,const Vector2 &sigma) {
+	return Vector2(normalDistribution(mu.x,sigma.x),normalDistribution(mu.y,sigma.y));
 }
 ostream & operator << (ostream & cout,const Vector2 &v) {
 	return cout<<"("<<v.x<<","<<v.y<<")";

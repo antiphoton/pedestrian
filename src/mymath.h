@@ -22,6 +22,7 @@ struct Vector2 {
 	double x,y;
 	void set(double x,double y);
 	void set(const Vector2 &v);
+	void setLengthSqr(double l);
 	double lengthSqr() const;
 	double disSqr(const Vector2 &that) const;
 	Vector2 operator - (const Vector2 &that) const;
@@ -30,6 +31,7 @@ struct Vector2 {
 	double operator & (const Vector2 &that) const;
 };
 bool intersect(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &vB1,const Vector2 &vB2);
+Vector2 normalDistribution(const Vector2 &mu,const Vector2 &sigma);
 std::ostream & operator << (std::ostream & cout,const Vector2 &v);
 struct Rect2 {
 	Rect2(double left=0,double top=0,double right=0,double bottom=0);

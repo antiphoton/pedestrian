@@ -37,23 +37,29 @@ FileParser::FileParser(const string &filename) {
 		m[key]=value;
 	}
 }
+const char *FileParser::find(const string &key) const {
+	if (m.find(key)==m.end()) {
+		printf("Cant find key \"%s\"\n",key.c_str());
+	}
+	return m.at(key).c_str();
+}
 string FileParser::getString(const string &key) const {
 	return m.at(key);
 }
 int FileParser::getInt(const string &key) const {
-	const char *p=m.at(key).c_str();
+	const char *p=find(key);
 	int x;
 	sscanf(p,"%d",&x);
 	return x;
 }
 double FileParser::getDouble(const string &key) const {
-	const char *p=m.at(key).c_str();
+	const char *p=find(key);
 	double x;
 	sscanf(p,"%lf",&x);
 	return x;
 }
 vector<string> FileParser::getStringVector(const string &key) const {
-	const char *p=m.at(key).c_str();
+	const char *p=find(key);
 	vector<string> v;
 	int n;
 	char *x=new char(strlen(p)+1);
@@ -65,7 +71,7 @@ vector<string> FileParser::getStringVector(const string &key) const {
 	return v;
 }
 vector<double> FileParser::getDoubleVector(const string &key) const {
-	const char *p=m.at(key).c_str();
+	const char *p=find(key);
 	vector<double> v;
 	int n;
 	double x;

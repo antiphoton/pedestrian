@@ -1,10 +1,12 @@
 #include"mymath.h"
 #include"mytime.h"
-#include"gate.h"
 #include"reading.h"
+#include"gate.h"
+#include"frame.h"
 #include"person.h"
 #include"playground.h"
 using std::vector;
+static FrameInitializer frameInitializer;
 Gates::Gates() {
 	const FileParser *config=readConfig("gate");
 	vector<double> xSource=config->getDoubleVector("xSource");
@@ -43,7 +45,7 @@ void Gates::update() {
 	updateSink();
 }
 void Gates::updateSource() {
-	const static double timeStep=readConfig("frame")->getDouble("step");
+	const static double timeStep=frame.simulateStep;
 	const vector<CellVector> *pNC;
 	int i,j,k;
 	for (i=0;i<nSource;i++) {
@@ -66,13 +68,15 @@ void Gates::updateSource() {
 		}
 		if (randomEvent(gs.p*timeStep)) {
 			gs.q++;
+			gs.q=1;
 		}
-		if (c==0&&gs.q>0) {
+		const static double maxDensity=readConfig("gate")->getDouble("sourceDensity")/sqr(readConfig("person")->getDouble("exclusionRadius"));
+		if (c<maxDensity*sqr(gs.r)&&gs.q>0) {
 			int personId=getPersonSlot();
 			if (personId>=0) {
 				people->at(personId).reset();
 				people->at(personId).id=personId;
-				people->at(personId).position.set(gs.position);
+				people->at(personId).position.set(normalDistribution(gs.position,Vector2(gs.r/3,gs.r/3)));
 				people->at(personId).destGate=gs.d;
 				playground.addPerson(personId);
 				gs.q--;

@@ -2,10 +2,12 @@
 #include<vector>
 #include"reading.h"
 #include"mympi.h"
+#include"frame.h"
 #include"gravity.h"
 #include"person.h"
 #include"playground.h"
 using std::vector;
+static FrameInitializer frameInitializer;
 MpiSharedArray<Person> *people;
 const int maxPeople=readConfig("playground")->getInt("maxPeople");
 void Person::reset() {
@@ -17,6 +19,7 @@ void Person::reset() {
 	walkingFrame=0;
 }
 void Person::think() {
+	const static FileParser *personConfig=readConfig("person");
 	if (!exist) {
 		return ;
 	}
@@ -29,11 +32,11 @@ void Person::think() {
 	walkingFrame++;
 	acceleration.set(0,0);
 	if (1) {
-		const static double tau=readConfig("person")->getDouble("relaxationTime");
-		const static double pF=readConfig("person")->getDouble("patienceFactor");
-		const static double ipF=readConfig("person")->getDouble("impatienceFactor");
+		const static double tau=personConfig->getDouble("relaxationTime");
+		const static double pF=personConfig->getDouble("patienceFactor");
+		const static double ipF=personConfig->getDouble("impatienceFactor");
 		double vat=desiredSpeed*(pF*(1-impatience)+ipF*impatience);
-		acceleration+=(gravity*vat-velocity)*tau;
+		acceleration+=(gravity*vat-velocity)*(1/tau);
 	}
 	const vector<CellVector> *pNC=playground.getNeighbourCells(position);
 	for (int i=0;i<(int)pNC->size();i++) {
@@ -52,12 +55,19 @@ void Person::think() {
 			const Vector2 relativePos=that.position-position;
 			const double relativeDis=sqrt(relativePos.lengthSqr());
 			if (1) {
-				const static double aa2=readConfig("person")->getDouble("exclusionStiffness");
-				const static double ab2=readConfig("person")->getDouble("exclusionDecay");
-				const static double d2=readConfig("person")->getDouble("exclusionRadius")*2;
+				const static double aa2=personConfig->getDouble("exclusionStiffness");
+				const static double ab2=personConfig->getDouble("exclusionDecay");
+				const static double d2=personConfig->getDouble("exclusionRadius")*2;
 				acceleration+=relativePos*(-1/relativeDis*aa2*exp((d2-relativeDis)/ab2));
 			}
 		}
+	}
+	if (1) {
+		const static double aMaxSqr=sqr(personConfig->getDouble("accelerationMax")*(personConfig->getDouble("muSpeed")+personConfig->getDouble("sigmaSpeed")*3)/personConfig->getDouble("relaxationTime")*personConfig->getDouble("impatienceFactor"));
+		if (acceleration.lengthSqr()>aMaxSqr) {
+			acceleration.setLengthSqr(aMaxSqr);
+		}
+
 	}
 }
 void Person::move() {
@@ -66,7 +76,7 @@ void Person::move() {
 	}
 	const static double width=readConfig("playground")->getDouble("width");
 	const static double height=readConfig("playground")->getDouble("height");
-	const static double timeStep=readConfig("frame")->getDouble("step");
+	const static double timeStep=frame.simulateStep;
 	position+=velocity*timeStep;
 	position.x-=floor(position.x/width)*width;
 	position.y-=floor(position.y/height)*height;
@@ -80,6 +90,7 @@ class PersonInitializer {
 				int i;
 				for (i=0;i<maxPeople;i++) {
 					people->at(i).exist=false;
+					people->at(i).safeToAdd=true;
 				}
 			}
 		};
@@ -92,7 +103,8 @@ class PersonInitializer {
 int getPersonSlot() {
 	int i;
 	for (i=0;i<maxPeople;i++) {
-		if (people->at(i).exist==false) {
+		const Person &p=people->at(i);
+		if (p.exist==false&&p.safeToAdd==true) {
 			break;
 		}
 	}
