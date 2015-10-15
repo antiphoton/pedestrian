@@ -115,6 +115,9 @@
 			table['classed']('invisible',true);
 			rendering.init();
 			initControl();
+			Ruler.init();
+			onWindowResize();
+			renderFrame(0);
 		};
 		return {//loadingScreen
 			init:init,
@@ -171,16 +174,11 @@
 		var svg;
 		var container;
 		var playgroundWidth,playgroundHeight;
-		var windowWidth,windowHeight;
 		var people=[];
-		var onResize=function() {
-			var w=window['innerWidth'];
-			var h=window['innerHeight'];
-			if (w===windowWidth&&h===windowHeight) {
+		var resize=function(windowWidth,windowHeight) {
+			if (container===undefined) {
 				return ;
 			}
-			windowWidth=w;
-			windowHeight=h;
 			container['attr']('width',windowWidth);
 			container['attr']('height',windowHeight);
 			var sW=windowWidth/playgroundWidth;
@@ -197,8 +195,6 @@
 			svg=container['append']('g');
 			playgroundWidth=data['playground']['width'];
 			playgroundHeight=data['playground']['height'];
-			onResize();
-			window['onresize']=onResize;
 			var i;
 			var person;
 			for (i=0;i<maxPeople;i++) {
@@ -206,7 +202,6 @@
 				person['attr']('r',0.2);
 				people['push'](person);
 			}
-			renderFrame(0);
 		};
 		var calc=function(personId,visible,x,y,groupId) {
 			if (visible===0) {
@@ -223,6 +218,7 @@
 		return {//svgRendering
 			init:init,
 			calc:calc,
+			resize:resize,
 			render:render
 		};
 	})();
@@ -232,20 +228,15 @@
 		var camera;
 		var renderer;
 		var playgroundWidth,playgroundHeight;
-		var windowWidth,windowHeight;
 		var people=[];
-			var peopleGeometry=new THREE['CircleGeometry'](0.2);
+		var peopleGeometry=new THREE['CircleGeometry'](0.2);
 		var peopleMaterial=peopleColor['map'](function(x) {
 			return new THREE['LineBasicMaterial']({'color':parseInt(x,16)});
 		});
-		var onResize=function() {
-			var w=window['innerWidth'];
-			var h=window['innerHeight'];
-			if (w===windowWidth&&h===windowHeight) {
+		var resize=function(windowWidth,windowHeight) {
+			if (renderer===undefined) {
 				return ;
 			}
-			windowWidth=w;
-			windowHeight=h;
 			renderer['setSize'](windowWidth,windowHeight);
 			var sW=windowWidth/playgroundWidth;
 			var sH=windowHeight/playgroundHeight;
@@ -275,8 +266,6 @@
 			camera['up']['set'](0,1,0);
 			playgroundWidth=data['playground']['width'];
 			playgroundHeight=data['playground']['height'];
-			onResize();
-			window['onresize']=onResize;
 			var background=new THREE['Mesh'](new THREE['BoxGeometry'](playgroundWidth,playgroundHeight,0.1),new THREE['LineBasicMaterial']({'color':0xefefef}));
 			background['position']['set'](playgroundWidth/2,playgroundHeight/2,-1);
 			scene['add'](background);
@@ -287,7 +276,6 @@
 				scene['add'](person);
 				people['push'](person);
 			}
-			renderFrame(0);
 		};
 		var calc=function(personId,visible,x,y,groupId) {
 			var person=people[personId];
@@ -307,6 +295,7 @@
 		return {//threeRendering
 			init:init,
 			calc:calc,
+			resize:resize,
 			render:render
 		};
 	})();
@@ -576,6 +565,64 @@
 			setFrameF(0);
 		};
 	})();
+	var Ruler=(function() {
+		var tickPosition=[0,1,2,5,10];
+		var n=tickPosition['length'];
+		var tickSize=tickPosition['map'](function(x,i,a) {
+			if (i+1<n) {
+				return a[i+1]-a[i];
+			}
+			else {
+				return 0;
+			}
+		});
+		var playgroundWidth,playgroundHeight;
+		var container;
+		var divSpaces=[];
+		var init=function() {
+			playgroundWidth=data['playground']['width'];
+			playgroundHeight=data['playground']['height'];
+			container=createDraggable()['classed']('ruler',true);
+			var spanNumber;
+			var i;
+			for (i=0;i<n;i++) {
+				divSpace=container['append']('div')['classed']('space',true);
+				spanNumber=divSpace['append']('span')['classed']('number',true);
+				spanNumber['text'](tickPosition[i]);
+				divSpaces['push'](divSpace);
+			}
+		};
+		var resize=function(windowWidth,windowHeight) {
+			if (container===undefined) {
+				return ;
+			}
+			var i;
+			var sW=windowWidth/playgroundWidth;
+			var sH=windowHeight/playgroundHeight;
+			for (i=0;i<n;i++) {
+				divSpaces[i]['style']('width',sW*tickSize[i]+'px');
+			}
+		};
+		return {//Ruler
+			init:init,
+			resize:resize
+		};
+	})();
+	var onWindowResize=(function() {
+		var windowWidth,windowHeight;
+		return function(forced) {
+			var w=window['innerWidth'];
+			var h=window['innerHeight'];
+			if (forced!==true&&w===windowWidth&&h===windowHeight) {
+				return ;
+			}
+			windowWidth=w;
+			windowHeight=h;
+			rendering.resize(w,h);
+			Ruler.resize(w,h);
+		};
+	})();
+	window['onresize']=onWindowResize;
 	var onDomReady=function() {
 		document['title']='Monitor';
 		loadingScreen.init();
