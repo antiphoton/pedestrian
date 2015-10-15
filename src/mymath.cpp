@@ -6,10 +6,9 @@
 using std::ostream;
 using std::string;
 double normalDistribution(double mu,double sigma) {
-	const double k=1.0/6/RAND_MAX;
-	const static double sqrt2=sqrt(2);
-	double x=((rand()+rand()+rand()+rand()+rand()+rand())*k-0.5);
-	x*=sqrt2;
+	const double k=1.0/RAND_MAX;
+	double x=((0.0+rand()+rand()+rand())*k-1.5);
+	x*=2;
 	x=mu+x*sigma;
 	return x;
 }
