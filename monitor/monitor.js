@@ -1,6 +1,151 @@
 (function() {
+	var getTime=function() {
+		return new Date()['getTime']();
+	};
+	var loadingScreen=(function() {
+		var table,tbody;
+		var aTr=[];
+		var aCaption=[],aTask=[],aFinish=[],aError=[];
+		var aStatusChanged=[];
+		var total=0;
+		var init=function() {
+			table=d3['select']('body')['append']('table')['classed']('loading',true);
+			tbody=table['append']('tbody');
+			var tr;
+			var tdCaption,tdStatus;
+			var i;
+			for (i=0;i<total;i++) {
+				tr=tbody['append']('tr');
+				aTr['push'](tr);
+				tdCaption=tr['append']('td')['classed']('caption',true);
+				tdStatus=tr['append']('td')['classed']('status',true);
+				tdCaption['text'](aCaption[i]);
+				tdStatus['append']('span');
+				tdStatus['append']('i')['classed']('fa',true);
+			}
+			animate();
+		};
+		var register=function(caption,task) {
+			if (task===undefined) {
+				task=0;
+			}
+			var id=total;
+			total++;
+			aCaption['push'](caption);
+			aTask['push'](task);
+			aFinish['push'](0);
+			aStatusChanged['push'](true);
+			return id;
+		};
+		var appendTask=function(id,task) {
+			aTask[id]+=task;
+		};
+		var finishTask=function(id,finish) {
+			if (aFinish[id]===0) {
+				aStatusChanged[id]=true;
+			}
+			aFinish[id]+=finish;
+			if (aFinish[id]===aTask[id]) {
+				aStatusChanged[id]=true;
+			}
+			animate();
+		};
+		var errorTask=function(id,error) {
+			aError[id]+=error;
+			animate();
+		};
+		var lastAnimateTime;
+		var animate=function() {
+			var i;
+			var anyStatusChanged=false;
+			var everythingFinished;
+			var tdStatus,span,fa;
+			var now;
+			for (i=0;i<total;i++) {
+				if (aStatusChanged[i]===true) {
+					anyStatusChanged=true;
+				}
+			}
+			now=getTime();
+			if (anyStatusChanged===false&&now-lastAnimateTime<50) {
+				return ;
+			}
+			lastAnimateTime=now;
+			for (i=0;i<total;i++) {
+				tdStatus=aTr[i]['select']('td.status');
+				fa=tdStatus['select']('i');
+				span=tdStatus['select']('span');
+				if (aStatusChanged[i]) {
+					if (aTask[i]===0) {
+						fa['classed']('invisible',true);
+						span['classed']('invisible',true);
+					}
+					else if (aTask[i]===aFinish[i]) {
+						fa['classed']({'invisible fa-spinner fa-pulse':false,'fa-check':true});
+						span['classed']('invisible',true);
+					}
+					else if (aTask[i]===1) {
+						fa['classed']({'invisible fa-check':false,'fa-spinner fa-pulse':true});
+						span['classed']('invisible',true);
+					}
+					else {
+						fa['classed']('invisible',true);
+						span['classed']('invisible',false);
+					}
+				}
+				else {
+					span['text']((aFinish[i]/aTask[i]*100)+'%');
+				}
+				aStatusChanged[i]=false;
+			}
+			if (anyStatusChanged) {
+				everythingFinished=true
+				for (i=0;i<total;i++) {
+					if (aTask[i]===0||aFinish[i]<aTask[i]) {
+						everythingFinished=false;
+						break;
+					}
+				}
+				if (everythingFinished) {
+					onAllFinished();
+				}
+			}
+		};
+		var onAllFinished=function() {
+			table['classed']('invisible',true);
+			rendering.init();
+			initControl();
+		};
+		return {//loadingScreen
+			init:init,
+			register:register,
+			appendTask:appendTask,
+			finishTask:finishTask,
+		};
+	})();
 	var data;
+	var loadJsonData=(function() {
+		var jobId=loadingScreen.register("Download",1);
+		return function() {
+			d3['json'](
+				'./out.trajectory.json',
+				function(a) {
+					if (a) {
+						loadingScreen.finishTask(jobId,1);
+						data=a;
+						maxPeople=data['playground']['maxPeople'];
+						totalFrame=data['frame']['total'];
+						parseBase64();
+					}
+					else {
+						loadingScreen.errorTask(jobId,1);
+					}
+				}
+			);
+		};
+	})();
 	var parseBase64=(function() {
+		var jobId=loadingScreen.register("Decode");
 		var parseByte=function(s) {
 			return base64js['toByteArray'](s);
 		};
@@ -9,27 +154,17 @@
 			return new Float64Array(a['buffer']);
 		}
 		return function() {
+			loadingScreen.appendTask(jobId,totalFrame);
 			data['frames']['forEach'](function (frame) {
 				frame['exist']=parseByte(frame['exist']);
 				frame['position']=parseFloat64(frame['position']);
 				frame['velocity']=parseFloat64(frame['velocity']);
 				frame['acceleration']=parseFloat64(frame['acceleration']);
 				frame['destGate']=parseByte(frame['destGate']);
+				loadingScreen.finishTask(jobId,1);
 			});
 		}
 	})();
-	d3['json'](
-		'./out.trajectory.json',
-		function(a) {
-			if (a) {
-				data=a;
-				maxPeople=data['playground']['maxPeople'];
-				totalFrame=data['frame']['total'];
-				parseBase64();
-				checkBoth();
-			}
-		}
-	);
 	var maxPeople,totalFrame;
 	var peopleColor=['0000ff','ff0000'];
 	var svgRendering=(function() {
@@ -99,7 +234,7 @@
 		var playgroundWidth,playgroundHeight;
 		var windowWidth,windowHeight;
 		var people=[];
-		var peopleGeometry=new THREE['CircleGeometry'](0.2);
+			var peopleGeometry=new THREE['CircleGeometry'](0.2);
 		var peopleMaterial=peopleColor['map'](function(x) {
 			return new THREE['LineBasicMaterial']({'color':parseInt(x,16)});
 		});
@@ -260,18 +395,65 @@
 	};
 	var initControl=(function() {
 		var container;
-		var btnLeft,btnRight;
+		var btnLeftFrame,btnRightFrame;
 		var btnForward,btnBackward;
+		var btnSpeedUp,btnSpeedDown;
 		var btnPlay;
-		var txtIndex;
+		var spanSpeedPower,iconSpeedDirection,txtTime;
 		var iconPlay;
 		var currentFrameF=0;
 		var lastTime;
 		var playing=false;
 		var timeStep;
 		var speed=1;
-		var getTime=function() {
-			return new Date()['getTime']();
+		var speedPower=0;
+		var unshiftChars=function(x,n,c) {
+			var ret=x+'';
+			while (ret['length']<n) {
+				ret=c+ret;
+			}
+			return ret;
+		};
+		var pushChars=function(x,n,c) {
+			var ret=x+'';
+			while (ret['length']<n) {
+				ret=ret+c;
+			}
+			return ret;
+		};
+		var timeFormat1=function(t,l) {
+			t=Math['round'](t);
+			var ms=t%1000;
+			t=Math['floor'](t/1000);
+			var s=t%60;
+			t=Math['floor'](t/60);
+			var m=t%1000;
+			t=Math['floor'](t/60);
+			var h=t;
+			var ret='';
+			if (l>0) {
+				ret=unshiftChars(s,2,'0')+'.'+unshiftChars(ms,3,'0');
+			}
+			if (l>1) {
+				ret=unshiftChars(m,2,'0')+':'+ret;
+			}
+			if (l>2) {
+				ret=unshiftChars(h,2,'0')+':'+ret;
+			}
+			return ret;
+		};
+		var timeFormat2=function(t1,t2) {
+			var l=0;
+			if (t2>=0) {
+				l=1;
+			}
+			if (t2>=1000*60) {
+				l=2;
+			}
+			if (t2>=1000*60*60) {
+				l=3;
+			}
+			return timeFormat1(t1,l)+' / '+timeFormat1(t2,l);
 		};
 		var setFrameF=function(iFrame) {
 			currentFrameF=iFrame;
@@ -281,7 +463,7 @@
 			if (currentFrameF>=totalFrame-1) {
 				currentFrameF=totalFrame-1;
 			}
-			txtIndex['text'](Math['floor'](currentFrameF)+'/'+totalFrame);
+			txtTime['text'](timeFormat2(currentFrameF*timeStep,(totalFrame-1)*timeStep));
 			renderFrame(currentFrameF);
 		};
 		var render=function() {
@@ -301,21 +483,22 @@
 		var onplay=function() {
 			if (playing) {
 				playing=false;
-				iconPlay['classed']('fa-pause',false)['classed']('fa-play',true);
 			}
 			else {
 				playing=true;
 				lastTime=getTime();
-				iconPlay['classed']('fa-play',false)['classed']('fa-pause',true);
 			}
-		};
-		var onpause=function() {
-			if (!playing) {
-				return ;
-			}
+			updateIcons();
 		};
 		var initData=function() {
 			timeStep=data['frame']['step']*1000;
+		};
+		var updateSpeedText=function() {
+			spanSpeedPower['text'](unshiftChars(speedPower,2,' '));
+		};
+		var updateIcons=function() {
+			iconPlay['classed']({'fa-play':!playing,'fa-pause':playing});
+			iconSpeedDirection['classed']({'fa-hand-o-left':speed<0,'fa-hand-o-right':speed>0});
 		};
 		var onStepLeft=function() {
 			if (playing) {
@@ -329,66 +512,75 @@
 			}
 			setFrameF(currentFrameF+1);
 		};
-		var onFastLeft=function() {
-			if (speed>0) {
-				speed=-1;
-			}
-			else {
-				speed*=2;
+		var onPlayForward=function() {
+			if (speed<0) {
+				speed=-speed;
+				updateIcons();
 			}
 		};
-		var onFastRight=function() {
-			if (speed<0) {
-				speed=1;
+		var onPlayBackward=function() {
+			if (speed>0) {
+				speed=-speed;
+				updateIcons();
 			}
-			else {
+		};
+		var onSpeedUp=function() {
+			if (speedPower<9) {
 				speed*=2;
+				speedPower+=1;
+				updateSpeedText();
+			}
+		};
+		var onSpeedDown=function() {
+			if (speedPower>-9) {
+				speed/=2;
+				speedPower-=1;
+				updateSpeedText();
 			}
 		};
 		var drawControl=function() {
 			container=createDraggable();
+			container['classed']('control',true);
 			var line2=container['append']('div');
 			var line3=container['append']('div');
-			txtIndex=line2['append']('span');
-			btnLeft=line3['append']('button')['classed']('unmovable',true);
+			spanSpeedPower=line2['append']('span')['classed']('speed',true)['text'](2)['append']('sup');
+			iconSpeedDirection=line2['append']('i')['classed']('fa',true);
+			txtTime=line2['append']('span')['classed']('time',true);
+			btnLeftFrame=line3['append']('button')['classed']('unmovable',true);
 			btnPlay=line3['append']('button')['classed']('unmovable',true);
-			btnRight=line3['append']('button')['classed']('unmovable',true);
+			btnRightFrame=line3['append']('button')['classed']('unmovable',true);
 			btnBackward=line3['append']('button')['classed']('unmovable',true);
 			btnForward=line3['append']('button')['classed']('unmovable',true);
-			btnLeft['append']('i')['classed']('fa',true)['classed']('fa-step-backward',true);
-			btnRight['append']('i')['classed']('fa',true)['classed']('fa-step-forward',true);
+			btnSpeedDown=line3['append']('button')['classed']('unmovable',true);
+			btnSpeedUp=line3['append']('button')['classed']('unmovable',true);
+			btnLeftFrame['append']('i')['classed']('fa',true)['classed']('fa-step-backward',true);
+			btnRightFrame['append']('i')['classed']('fa',true)['classed']('fa-step-forward',true);
 			btnForward['append']('i')['classed']('fa',true)['classed']('fa-forward',true);
 			btnBackward['append']('i')['classed']('fa',true)['classed']('fa-backward',true);
-			iconPlay=btnPlay['append']('i')['classed']('fa',true)['classed']('fa-play',true);
-			txtIndex['text'](currentFrameF+'/'+totalFrame);
-			btnLeft['on']('click',onStepLeft);
-			btnRight['on']('click',onStepRight);
-			btnBackward['on']('click',onFastLeft);
-			btnForward['on']('click',onFastRight);
+			btnSpeedUp['append']('i')['classed']('fa',true)['classed']('fa-angle-double-up',true);
+			btnSpeedDown['append']('i')['classed']('fa',true)['classed']('fa-angle-double-down',true);
+			iconPlay=btnPlay['append']('i')['classed']('fa',true);
+			btnLeftFrame['on']('click',onStepLeft);
+			btnRightFrame['on']('click',onStepRight);
+			btnForward['on']('click',onPlayForward);
+			btnBackward['on']('click',onPlayBackward);
+			btnSpeedUp['on']('click',onSpeedUp);
+			btnSpeedDown['on']('click',onSpeedDown);
 			btnPlay['on']('click',onplay);
 		};
 		return function() {
 			initData();
 			drawControl();
+			updateSpeedText();
+			updateIcons();
+			setFrameF(0);
 		};
-	})();
-	var checkBoth=(function() {
-		var total=2;
-		var finished=0;
-		var main=function() {
-			rendering.init();
-			initControl();
-		};
-		return function() {
-			finished++;
-			if (finished===total) {
-				main();
-			}
-		}
 	})();
 	var onDomReady=function() {
 		document['title']='Monitor';
-		checkBoth();
+		loadingScreen.init();
+		loadJsonData();
 	};
 	return onDomReady;
 })()();
+
