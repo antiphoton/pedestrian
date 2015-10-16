@@ -3,152 +3,102 @@
 		return new Date()['getTime']();
 	};
 	var loadingScreen=(function() {
-		var table,tbody;
-		var aTr=[];
-		var aCaption=[],aTask=[],aFinish=[],aError=[];
-		var aStatusChanged=[];
-		var total=0;
-		var init=function() {
-			table=d3['select']('body')['append']('table')['classed']('loading',true);
-			tbody=table['append']('tbody');
-			var tr;
-			var tdCaption,tdStatus;
-			var i;
-			for (i=0;i<total;i++) {
-				tr=tbody['append']('tr');
-				aTr['push'](tr);
-				tdCaption=tr['append']('td')['classed']('caption',true);
-				tdStatus=tr['append']('td')['classed']('status',true);
-				tdCaption['text'](aCaption[i]);
-				tdStatus['append']('span');
-				tdStatus['append']('i')['classed']('fa',true);
-			}
-			animate();
+		var container;
+		var loaded=false;
+		var dragenter=function() {
+			var e=d3['event'];
+			e['stopPropagation']();
+			e['preventDefault']();
 		};
-		var register=function(caption,task) {
-			if (task===undefined) {
-				task=0;
-			}
-			var id=total;
-			total++;
-			aCaption['push'](caption);
-			aTask['push'](task);
-			aFinish['push'](0);
-			aStatusChanged['push'](true);
-			return id;
+		var dragover=function() {
+			var e=d3['event'];
+			e['stopPropagation']();
+			e['preventDefault']();
 		};
-		var appendTask=function(id,task) {
-			aTask[id]+=task;
-		};
-		var finishTask=function(id,finish) {
-			if (aFinish[id]===0) {
-				aStatusChanged[id]=true;
-			}
-			aFinish[id]+=finish;
-			if (aFinish[id]===aTask[id]) {
-				aStatusChanged[id]=true;
-			}
-			animate();
-		};
-		var errorTask=function(id,error) {
-			aError[id]+=error;
-			animate();
-		};
-		var lastAnimateTime;
-		var animate=function() {
-			var i;
-			var anyStatusChanged=false;
-			var everythingFinished;
-			var tdStatus,span,fa;
-			var now;
-			for (i=0;i<total;i++) {
-				if (aStatusChanged[i]===true) {
-					anyStatusChanged=true;
-				}
-			}
-			now=getTime();
-			if (anyStatusChanged===false&&now-lastAnimateTime<50) {
+		var drop=function() {
+			var e=d3['event'];
+			e['stopPropagation']();
+			e['preventDefault']();
+			if (loaded) {
 				return ;
 			}
-			lastAnimateTime=now;
-			for (i=0;i<total;i++) {
-				tdStatus=aTr[i]['select']('td.status');
-				fa=tdStatus['select']('i');
-				span=tdStatus['select']('span');
-				if (aStatusChanged[i]) {
-					if (aTask[i]===0) {
-						fa['classed']('invisible',true);
-						span['classed']('invisible',true);
-					}
-					else if (aTask[i]===aFinish[i]) {
-						fa['classed']({'invisible fa-spinner fa-pulse':false,'fa-check':true});
-						span['classed']('invisible',true);
-					}
-					else if (aTask[i]===1) {
-						fa['classed']({'invisible fa-check':false,'fa-spinner fa-pulse':true});
-						span['classed']('invisible',true);
-					}
-					else {
-						fa['classed']('invisible',true);
-						span['classed']('invisible',false);
-					}
-				}
-				else {
-					span['text']((aFinish[i]/aTask[i]*100)+'%');
-				}
-				aStatusChanged[i]=false;
-			}
-			if (anyStatusChanged) {
-				everythingFinished=true
-				for (i=0;i<total;i++) {
-					if (aTask[i]===0||aFinish[i]<aTask[i]) {
-						everythingFinished=false;
-						break;
-					}
-				}
-				if (everythingFinished) {
-					onAllFinished();
-				}
-			}
+			handleFiles(e['dataTransfer']['files']);
 		};
-		var onAllFinished=function() {
-			table['classed']('invisible',true);
+		var fileReader=new FileReader;
+		var fileName;
+		var txtError;
+		var iStatus;
+		var setLoadingStatus=function() {
+			txtError['text']('');
+			iStatus['classed']({'fa-file-text-o':false,'fa-spinner':true,'fa-pulse':true});
+		};
+		var setWaitingStatus=function() {
+			iStatus['classed']({'fa-file-text-o':true,'fa-spinner':false,'fa-pulse':false});
+		};
+		var onSuccess=function() {
+			loaded=true;
+			maxPeople=data['playground']['maxPeople'];
+			totalFrame=data['frame']['total'];
+			parseBase64();
+			container['classed']('invisible',true);
 			rendering.init();
 			initControl();
 			Ruler.init();
 			onWindowResize();
 			renderFrame(0);
 		};
+		var onError=function(msg) {
+			txtError['text'](msg);
+			setWaitingStatus();
+		};
+		var onFileLoaded=function() {
+			try {
+				data=JSON['parse'](fileReader.result);
+				onSuccess();
+			}
+			catch (e) {
+				onError("Can't parse JSON.");
+			}
+		};
+		var handleFiles=function(files) {
+			var file=files[0];
+			fileName=file['name'];
+			if (!/\.json$/['test'](fileName)) {
+				onError('File extension muse be JSON.');
+				return ;
+			}
+			setLoadingStatus();
+			fileReader['onload']=onFileLoaded;
+			fileReader['readAsText'](file);
+		};
+		var init=function() {
+			var body=d3['select']('body');
+			body['on']('dragenter',dragenter,false);
+			body['on']('dragover',dragover,false);
+			body['on']('drop',drop,false);
+			container=body['append']('div');
+			container['classed']('loading',true);
+			var txtInstruction=container['append']('p');
+			txtInstruction['text']('Drop JSON here.');
+			txtError=container['append']('p')['classed']('error',true);
+			iStatus=container['append']('p')['append']('i')['classed']('fa',true);
+			setWaitingStatus();
+		};
 		return {//loadingScreen
-			init:init,
-			register:register,
-			appendTask:appendTask,
-			finishTask:finishTask,
+			init:init
 		};
 	})();
 	var data;
 	var loadJsonData=(function() {
-		var jobId=loadingScreen.register("Download",1);
 		return function() {
 			d3['json'](
 				'./out.trajectory.json',
 				function(a) {
-					if (a) {
-						loadingScreen.finishTask(jobId,1);
-						data=a;
-						maxPeople=data['playground']['maxPeople'];
-						totalFrame=data['frame']['total'];
-						parseBase64();
-					}
-					else {
-						loadingScreen.errorTask(jobId,1);
-					}
 				}
 			);
 		};
 	})();
 	var parseBase64=(function() {
-		var jobId=loadingScreen.register("Decode");
 		var parseByte=function(s) {
 			return base64js['toByteArray'](s);
 		};
@@ -157,18 +107,17 @@
 			return new Float64Array(a['buffer']);
 		}
 		return function() {
-			loadingScreen.appendTask(jobId,totalFrame);
 			data['frames']['forEach'](function (frame) {
 				frame['exist']=parseByte(frame['exist']);
 				frame['position']=parseFloat64(frame['position']);
 				frame['velocity']=parseFloat64(frame['velocity']);
 				frame['acceleration']=parseFloat64(frame['acceleration']);
 				frame['destGate']=parseByte(frame['destGate']);
-				loadingScreen.finishTask(jobId,1);
 			});
 		}
 	})();
 	var maxPeople,totalFrame;
+	var backgroundColor='efefef';
 	var peopleColor=['0000ff','ff0000'];
 	var svgRendering=(function() {
 		var svg;
@@ -266,7 +215,7 @@
 			camera['up']['set'](0,1,0);
 			playgroundWidth=data['playground']['width'];
 			playgroundHeight=data['playground']['height'];
-			var background=new THREE['Mesh'](new THREE['BoxGeometry'](playgroundWidth,playgroundHeight,0.1),new THREE['LineBasicMaterial']({'color':0xefefef}));
+			var background=new THREE['Mesh'](new THREE['BoxGeometry'](playgroundWidth,playgroundHeight,0.1),new THREE['LineBasicMaterial']({'color':parseInt(backgroundColor,16)}));
 			background['position']['set'](playgroundWidth/2,playgroundHeight/2,-10);
 			scene['add'](background);
 			var i;
@@ -282,16 +231,18 @@
 			var aSource=data['gates']['sources'];
 			var aSink=data['gates']['sinks'];
 			var geometry=new THREE['CircleGeometry'](1,36);
-			var material=new THREE['LineBasicMaterial']({'color':0xdfdfdf});
+			var material;
 			var object;
 			var i;
 			for (i=0;i<aSource['length'];i++) {
+				material=new THREE['LineBasicMaterial']({'color':new THREE['Color']('#'+peopleColor[i]).lerp(new THREE['Color']('#'+backgroundColor),0.7)});
 				object=new THREE['Mesh'](geometry,material);
 				object['position']['set'](aSource[i][0],aSource[i][1],-2);
 				object['scale']['set'](aSource[i][2],aSource[i][2],aSource[i][2]);
 				scene['add'](object);
 			}
 			for (i=0;i<aSink['length'];i++) {
+				material=new THREE['LineBasicMaterial']({'color':new THREE['Color']('#'+peopleColor[i]).lerp(new THREE['Color']('#'+backgroundColor),0.7)});
 				object=new THREE['Mesh'](geometry,material);
 				object['position']['set'](aSink[i][0],aSink[i][1],-2);
 				object['scale']['set'](aSink[i][2],aSink[i][2],aSink[i][2]);
@@ -665,7 +616,6 @@
 	var onDomReady=function() {
 		document['title']='Monitor';
 		loadingScreen.init();
-		loadJsonData();
 	};
 	return onDomReady;
 })()();

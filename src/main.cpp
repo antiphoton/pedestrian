@@ -37,7 +37,7 @@ int main(int argc,char **argv) {
 			}
 		}
 		SINGLERUN {
-			printf("iPrint=%d\n",iPrint);
+			printf("%d / %d\r",iPrint,frame.totalPrint);
 			for (int personId=0;personId<maxPeople;personId++) {
 				playground.updatePerson(personId);
 				Person &p=people->at(personId);

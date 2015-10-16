@@ -10,7 +10,7 @@ Trajectory trajectory;
 Trajectory::Trajectory() {
 	SINGLERUN{
 		const FileParser *playground=readConfig("playground");
-		file=fopen("../monitor/out.trajectory.json","w");
+		file=fopen("out.trajectory.json","w");
 		iFrame=0;
 		fprintf(file,"{\n");
 		fprintf(file,"\"frame\":{\n");
