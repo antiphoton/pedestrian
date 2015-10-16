@@ -5,6 +5,7 @@
 #include"gate.h"
 #include"gravity.h"
 #include"person.h"
+#include"wall.h"
 #include"playground.h"
 #include"trajectory.h"
 static FrameInitializer frameInitializer;
@@ -32,7 +33,7 @@ int main(int argc,char **argv) {
 			}
 			delete manager2;
 			SINGLERUN {
-				gates.update();
+				updateGates();
 			}
 		}
 		SINGLERUN {

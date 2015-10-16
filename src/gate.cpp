@@ -7,6 +7,28 @@
 #include"playground.h"
 using std::vector;
 static FrameInitializer frameInitializer;
+struct GateSource {
+	Vector2 position;
+	double r;
+	double p;
+	int d;
+	int q;
+};
+struct GateSink {
+	Vector2 position;
+	double r;
+};
+class Gates {
+	public:
+		Gates();
+		~Gates();
+		void update();
+		void updateSource();
+		void updateSink();
+		int nSource,nSink;
+		GateSource *aSource;
+		GateSink *aSink;
+};
 Gates::Gates() {
 	const FileParser *config=readConfig("gate");
 	vector<double> xSource=config->getDoubleVector("xSource");
@@ -68,7 +90,6 @@ void Gates::updateSource() {
 		}
 		if (randomEvent(gs.p*timeStep)) {
 			gs.q++;
-			gs.q=1;
 		}
 		const static double maxDensity=readConfig("gate")->getDouble("sourceDensity")/sqr(readConfig("person")->getDouble("exclusionRadius"));
 		if (c<maxDensity*sqr(gs.r)&&gs.q>0) {
@@ -100,11 +121,50 @@ void Gates::updateSink() {
 					break;
 				}
 				if (people->at(k).position.disSqr(gs.position)<=sqr(gs.r)) {
-					playground.deletePerson(k);
+					if (people->at(k).destGate==i) {
+						playground.deletePerson(k);
+					}
 				}
 			}
 		}
 	}
 }
-Gates gates;
+Gates *gates;
+void updateGates() {
+	gates->update();
+}
+GatesInitializer::GatesInitializer() {
+	static bool first=true;
+	if (!first) {
+		return; 
+	}
+	first=false;
+	gates=new Gates();
+}
+void writeGatesJson(FILE *file) {
+	static GatesInitializer gatesInitializer;
+	fprintf(file,"\"gates\":{\n");
+	fprintf(file,"\"sources\":[\n");
+	for (int i=0;i<gates->nSource;i++) {
+		const GateSource *g=gates->aSource+i;
+		fprintf(file,"[%f,%f,%f]",g->position.x,g->position.y,g->r);
+		if (i<gates->nSource-1) {
+			fprintf(file,",");
+		}
+		fprintf(file,"\n");
+	}
+	fprintf(file,"],\n");
+	fprintf(file,"\"sinks\":[\n");
+	for (int i=0;i<gates->nSink;i++) {
+		const GateSink *g=gates->aSink+i;
+		fprintf(file,"[%f,%f,%f]",g->position.x,g->position.y,g->r);
+		if (i<gates->nSink-1) {
+			fprintf(file,",");
+		}
+		fprintf(file,"\n");
+	}
+	fprintf(file,"]\n");
+	fprintf(file,"},\n");
+}
+static GatesInitializer gatesInitializer;
 

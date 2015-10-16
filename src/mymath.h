@@ -29,6 +29,8 @@ struct Vector2 {
 	Vector2 & operator += (const Vector2 &that);
 	Vector2 operator * (double k) const;
 	double operator & (const Vector2 &that) const;
+	double operator % (const Vector2 &that) const;
+	Vector2 operator % (double z) const;
 };
 bool intersect(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &vB1,const Vector2 &vB2);
 Vector2 normalDistribution(const Vector2 &mu,const Vector2 &sigma);

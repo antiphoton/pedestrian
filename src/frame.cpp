@@ -7,8 +7,6 @@ void Frame::init() {
 	simulateStep=f->getDouble("simulateStep");
 	printStep=f->getDouble("printStep");
 	totalPrint=ceil(totalTime/printStep);
-	printf("%f\t%f\n",totalTime,printStep);
-	printf("%d\n",totalPrint);
 	simulatePerPrint=ceil(printStep/simulateStep);
 	totalTime=totalPrint*printStep;
 	simulateStep=printStep/simulatePerPrint;

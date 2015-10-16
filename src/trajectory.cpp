@@ -2,6 +2,8 @@
 #include"reading.h"
 #include"frame.h"
 #include"person.h"
+#include"wall.h"
+#include"gate.h"
 #include"trajectory.h"
 static FrameInitializer frameInitializer;
 Trajectory trajectory;
@@ -20,6 +22,8 @@ Trajectory::Trajectory() {
 		fprintf(file,"\"height\":%f,\n",playground->getDouble("height"));
 		fprintf(file,"\"maxPeople\":%d\n",playground->getInt("maxPeople"));
 		fprintf(file,"},\n");
+		writeWallJson(file);
+		writeGatesJson(file);
 		fprintf(file,"\"frames\":[\n");
 	}
 }

@@ -1,27 +1,8 @@
 #pragma once
 #include<vector>
 #include"mymath.h"
-struct GateSource {
-	Vector2 position;
-	double r;
-	double p;
-	int d;
-	int q;
+void updateGates();
+void writeGatesJson(FILE *file);
+struct GatesInitializer {
+	GatesInitializer();
 };
-struct GateSink {
-	Vector2 position;
-	double r;
-};
-class Gates {
-	public:
-		Gates();
-		~Gates();
-		void update();
-	private:
-		void updateSource();
-		void updateSink();
-		int nSource,nSink;
-		GateSource *aSource;
-		GateSink *aSink;
-};
-extern Gates gates;

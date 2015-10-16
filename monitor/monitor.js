@@ -267,7 +267,7 @@
 			playgroundWidth=data['playground']['width'];
 			playgroundHeight=data['playground']['height'];
 			var background=new THREE['Mesh'](new THREE['BoxGeometry'](playgroundWidth,playgroundHeight,0.1),new THREE['LineBasicMaterial']({'color':0xefefef}));
-			background['position']['set'](playgroundWidth/2,playgroundHeight/2,-1);
+			background['position']['set'](playgroundWidth/2,playgroundHeight/2,-10);
 			scene['add'](background);
 			var i;
 			var person;
@@ -276,6 +276,46 @@
 				scene['add'](person);
 				people['push'](person);
 			}
+			drawStaticObjects();
+		};
+		var drawGates=function() {
+			var aSource=data['gates']['sources'];
+			var aSink=data['gates']['sinks'];
+			var geometry=new THREE['CircleGeometry'](1,36);
+			var material=new THREE['LineBasicMaterial']({'color':0xdfdfdf});
+			var object;
+			var i;
+			for (i=0;i<aSource['length'];i++) {
+				object=new THREE['Mesh'](geometry,material);
+				object['position']['set'](aSource[i][0],aSource[i][1],-2);
+				object['scale']['set'](aSource[i][2],aSource[i][2],aSource[i][2]);
+				scene['add'](object);
+			}
+			for (i=0;i<aSink['length'];i++) {
+				object=new THREE['Mesh'](geometry,material);
+				object['position']['set'](aSink[i][0],aSink[i][1],-2);
+				object['scale']['set'](aSink[i][2],aSink[i][2],aSink[i][2]);
+				scene['add'](object);
+			}
+		};
+		var drawWalls=function() {
+			var aWall=data['wall']['segments'];
+			var nWall=aWall['length'];
+			var geometry;
+			var material=new THREE['LineBasicMaterial']({'color':0x000000});
+			var i;
+			for (i=0;i<nWall;i++) {
+				geometry=new THREE['Geometry']();
+				geometry['vertices']['push'](
+					new THREE['Vector3'](aWall[i][0],aWall[i][1],-1),
+					new THREE['Vector3'](aWall[i][2],aWall[i][3],-1)
+				);
+				scene['add'](new THREE['Line'](geometry,material));
+			}
+		};
+		var drawStaticObjects=function() {
+			drawWalls();
+			drawGates();
 		};
 		var calc=function(personId,visible,x,y,groupId) {
 			var person=people[personId];
@@ -445,8 +485,7 @@
 			return timeFormat1(t1,l)+' / '+timeFormat1(t2,l);
 		};
 		var setFrameF=function(iFrame) {
-			currentFrameF=iFrame;
-			if (currentFrameF<0) {
+			currentFrameF=iFrame; if (currentFrameF<0) {
 				currentFrameF=0;
 			}
 			if (currentFrameF>=totalFrame-1) {
@@ -493,13 +532,13 @@
 			if (playing) {
 				return ;
 			}
-			setFrameF(currentFrameF-1);
+			setFrameF(Math['ceil'](currentFrameF)-1);
 		};
 		var onStepRight=function() {
 			if (playing) {
 				return ;
 			}
-			setFrameF(currentFrameF+1);
+			setFrameF(Math['floor'](currentFrameF)+1);
 		};
 		var onPlayForward=function() {
 			if (speed<0) {

@@ -4,6 +4,7 @@
 #include"mympi.h"
 #include"frame.h"
 #include"gravity.h"
+#include"wall.h"
 #include"person.h"
 #include"playground.h"
 using std::vector;
@@ -31,6 +32,7 @@ void Person::think() {
 	effectiveMove+=gravity&velocity;
 	walkingFrame++;
 	acceleration.set(0,0);
+	acceleration+=getWallForce(position);
 	if (1) {
 		const static double tau=personConfig->getDouble("relaxationTime");
 		const static double pF=personConfig->getDouble("patienceFactor");
@@ -54,11 +56,33 @@ void Person::think() {
 			}
 			const Vector2 relativePos=that.position-position;
 			const double relativeDis=sqrt(relativePos.lengthSqr());
+			const Vector2 relativePosDirection=relativePos*(1/relativeDis);
 			if (1) {
 				const static double aa2=personConfig->getDouble("exclusionStiffness");
 				const static double ab2=personConfig->getDouble("exclusionDecay");
 				const static double d2=personConfig->getDouble("exclusionRadius")*2;
-				acceleration+=relativePos*(-1/relativeDis*aa2*exp((d2-relativeDis)/ab2));
+				acceleration+=relativePosDirection*(-aa2*exp((d2-relativeDis)/ab2));
+			}
+			const double goodLeader=(that.velocity&gravity)/desiredSpeed;
+			const double onMyRight=relativePosDirection%gravity;
+			const double onMyFront=relativePosDirection&gravity;
+			const static int followEnabled=personConfig->getInt("followEnabled");
+			if (followEnabled) {
+				if (goodLeader>0&&onMyFront>0) {
+					const static double aa2=personConfig->getDouble("followStiffness");
+					const static double ab2=personConfig->getDouble("followDecay");
+					const static double d2=personConfig->getDouble("followRadius")*2;
+					acceleration+=(relativePosDirection%onMyRight)*(goodLeader*onMyFront*(aa2*exp((d2-relativeDis)/ab2)));
+				}
+			}
+			const static int evasionEnabled=personConfig->getInt("evasionEnabled");
+			if (evasionEnabled) {
+				if (goodLeader<0&&onMyFront>0) {
+					const static double aa2=personConfig->getDouble("evasionStiffness");
+					const static double ab2=personConfig->getDouble("evasionDecay");
+					const static double d2=personConfig->getDouble("evasionRadius")*2;
+					acceleration+=(relativePosDirection%onMyRight)*(goodLeader*onMyFront*(aa2*exp((d2-relativeDis)/ab2)));
+				}
 			}
 		}
 	}

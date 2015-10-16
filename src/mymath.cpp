@@ -52,6 +52,12 @@ Vector2 Vector2::operator *(double k) const {
 double Vector2::operator &(const Vector2 &that) const {
 	return this->x*that.x+this->y*that.y;
 }
+double Vector2::operator %(const Vector2 &that) const {
+	return this->x*that.y-this->y*that.x;
+}
+Vector2 Vector2::operator %(double z) const {
+	return Vector2(y*z,-x*z);
+}
 inline double sameSide(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &p1,const Vector2 &p2) {
 	double yA=vA2.y-vA1.y;
 	double xA=vA2.x-vA1.x;
