@@ -9,6 +9,7 @@
 			var e=d3['event'];
 			e['stopPropagation']();
 			e['preventDefault']();
+			onError('');
 		};
 		var dragover=function() {
 			var e=d3['event'];
@@ -35,11 +36,36 @@
 		var setWaitingStatus=function() {
 			iStatus['classed']({'fa-file-text-o':true,'fa-spinner':false,'fa-pulse':false});
 		};
+		var parseCalculationFile=function() {
+			parseBase64();
+			document['title']=data['control']['title'];
+		};
+		var parseExperimentData=function() {
+			document['title']=fileName;
+			parseMatlab();
+		};
+		var tryParse=function(callback) {
+			if (callback===parseCalculationFile) {
+				return false;
+			}
+			//try {
+				callback();
+				loaded=true;
+				return true;
+			//}
+			//catch (e) {
+				return false;
+			//}
+		};
 		var onSuccess=function() {
-			loaded=true;
+			if (!tryParse(parseCalculationFile)
+				&&!tryParse(parseExperimentData)
+				) {
+				onError('Runtime Error.');
+				return ;
+			}
 			maxPeople=data['playground']['maxPeople'];
 			totalFrame=data['frame']['total'];
-			parseBase64();
 			container['classed']('invisible',true);
 			rendering.init();
 			initControl();
@@ -54,17 +80,17 @@
 		var onFileLoaded=function() {
 			try {
 				data=JSON['parse'](fileReader.result);
-				onSuccess();
 			}
 			catch (e) {
-				onError("Can't parse JSON.");
+				onError("Syntax Error");
 			}
+			onSuccess();
 		};
 		var handleFiles=function(files) {
 			var file=files[0];
 			fileName=file['name'];
 			if (!/\.json$/['test'](fileName)) {
-				onError('File extension muse be JSON.');
+				onError('File Type Error');
 				return ;
 			}
 			setLoadingStatus();
@@ -115,6 +141,93 @@
 				frame['destGate']=parseByte(frame['destGate']);
 			});
 		}
+	})();
+	var parseMatlab=(function() {
+		var timeStep=0.1;
+		var mat;
+		var findRange=function(i,unit) {
+			var min,max;
+			mat['forEach'](function(a) {
+				var x=a[i];
+				if (unit!==undefined) {
+					x=Math['round'](x/unit)*unit;
+				}
+				if (min===undefined||x<min) {
+					min=x;
+				}
+				if (max===undefined||x>max) {
+					max=x;
+				}
+			});
+			return [min,max];
+		};
+		var fixByRange=function(x,range,unit) {
+			x-=range[0];
+			if (unit!==undefined) {
+				x=Math['round'](x/unit);
+			}
+			return x;
+		};
+		return function() {
+			mat=data[0];
+			var tRange=findRange(0,timeStep);
+			var pRange=findRange(1,1);
+			var xRange=findRange(2);
+			var yRange=findRange(3);
+			var cRange=findRange(4,1);
+			var nPeople=Math['round'](pRange[1]-pRange[0]);
+			var nFrame=Math['round']((tRange[1]-tRange[0])/timeStep+1);
+			data={
+				"frame":{
+					"total":nFrame,
+					"step":timeStep
+				},
+				"playground":{
+					"width":xRange[1]-xRange[0],
+					"height":yRange[1]-yRange[0],
+					"maxPeople":pRange[1]-pRange[0]
+				},
+				"wall":{
+					"segments":[
+					]
+				},
+				"gates":{
+					"sources":[
+					],
+					"sinks":[
+					]
+				},
+				"frames":[
+				]
+			};
+			var i;
+			for (i=0;i<nFrame;i++) {
+				data["frames"]['push']({
+					"exist":new Uint8Array(nPeople),
+					"destGate":new Uint8Array(nPeople),
+					"position":new Float64Array(nPeople*2),
+					"velocity":new Float64Array(nPeople*2)
+				});
+			}
+			var t,p,x,y,c,vX,vY;
+			var cur;
+			mat['forEach'](function(a) {
+				t=fixByRange(a[0],tRange,timeStep);
+				p=fixByRange(a[1],pRange,1);
+				x=fixByRange(a[2],xRange);
+				y=fixByRange(a[3],yRange);
+				c=0;//fixByRange(a[4],cRange,1);
+				vX=fixByRange(a[5],[0]);
+				vY=fixByRange(a[6],[0]);
+				cur=data["frames"][t];
+				cur["exist"][p]=1;
+				cur["destGate"][p]=c;
+				cur["position"][p*2+0]=x;
+				cur["position"][p*2+1]=y;
+				cur["velocity"][p*2+0]=vX;
+				cur["velocity"][p*2+1]=vY;
+			});
+		};
 	})();
 	var maxPeople,totalFrame;
 	var backgroundColor='efefef';
@@ -436,12 +549,16 @@
 			return timeFormat1(t1,l)+' / '+timeFormat1(t2,l);
 		};
 		var setFrameF=function(iFrame) {
-			currentFrameF=iFrame; if (currentFrameF<0) {
-				currentFrameF=0;
+			if (iFrame<0) {
+				iFrame=0;
 			}
-			if (currentFrameF>=totalFrame-1) {
-				currentFrameF=totalFrame-1;
+			if (iFrame>=totalFrame-1) {
+				iFrame=totalFrame-1;
 			}
+			if (currentFrameF===iFrame) {
+				return ;
+			}
+			currentFrameF=iFrame;
 			txtTime['text'](timeFormat2(currentFrameF*timeStep,(totalFrame-1)*timeStep));
 			renderFrame(currentFrameF);
 		};
