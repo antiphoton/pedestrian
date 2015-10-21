@@ -58,7 +58,7 @@ double Vector2::operator %(const Vector2 &that) const {
 Vector2 Vector2::operator %(double z) const {
 	return Vector2(y*z,-x*z);
 }
-inline double sameSide(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &p1,const Vector2 &p2) {
+double sameSide(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &p1,const Vector2 &p2) {
 	double yA=vA2.y-vA1.y;
 	double xA=vA2.x-vA1.x;
 	double l2A=yA*yA+xA*xA;
@@ -78,6 +78,12 @@ bool intersect(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &vB1,const Ve
 }
 Vector2 normalDistribution(const Vector2 &mu,const Vector2 &sigma) {
 	return Vector2(normalDistribution(mu.x,sigma.x),normalDistribution(mu.y,sigma.y));
+}
+Vector2 uniformDistribution(const Vector2 &c,double r) {
+	const static double p2=acos(-1.0)*2;
+	double a=sqrt(1.0*rand()/RAND_MAX)*r;
+	double t=1.0*rand()/RAND_MAX*p2;
+	return Vector2(c.x+a*cos(t),c.y+a*sin(t));
 }
 ostream & operator << (ostream & cout,const Vector2 &v) {
 	return cout<<"("<<v.x<<","<<v.y<<")";

@@ -13,6 +13,9 @@ Trajectory::Trajectory() {
 		file=fopen("out.trajectory.json","w");
 		iFrame=0;
 		fprintf(file,"{\n");
+		fprintf(file,"\"control\":{\n");
+		fprintf(file,"\"title\":\"%s\"\n",readConfig("control")->getString("title").c_str());
+		fprintf(file,"},\n");
 		fprintf(file,"\"frame\":{\n");
 		fprintf(file,"\"total\":%d,\n",frame.totalPrint);
 		fprintf(file,"\"step\":%f\n",frame.printStep);

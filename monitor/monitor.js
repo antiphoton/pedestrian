@@ -45,17 +45,14 @@
 			parseMatlab();
 		};
 		var tryParse=function(callback) {
-			if (callback===parseCalculationFile) {
-				return false;
-			}
-			//try {
+			try {
 				callback();
 				loaded=true;
 				return true;
-			//}
-			//catch (e) {
+			}
+			catch (e) {
 				return false;
-			//}
+			}
 		};
 		var onSuccess=function() {
 			if (!tryParse(parseCalculationFile)
@@ -272,7 +269,7 @@
 			}
 			people[personId]['attr']('display','inline');
 			people[personId]['attr']('fill','#'+peopleColor[groupId]);
-			people[personId]['attr']('transform','translate('+x/visible+','+y/visible+')');
+			people[personId]['attr']('transform','translate('+x+','+y+')');
 			people[personId]['attr']('opacity',visible);
 		};
 		var render=function() {
@@ -389,8 +386,8 @@
 			}
 			person['visible']=true;
 			person['scale']['set'](visible,visible,visible);
-			person['position']['x']=x/visible;
-			person['position']['y']=y/visible;
+			person['position']['x']=x;
+			person['position']['y']=y;
 			person['material']=peopleMaterial[groupId];
 		};
 		var render=function() {
@@ -404,36 +401,58 @@
 		};
 	})();
 	var rendering=threeRendering;
-	var renderFrame=function(iFrame) {
-		var i1=Math['floor'](iFrame);
-		var i2=i1+1;
-		var a1=i2-iFrame;
-		var a2=1-a1;
-		var i;
-		var f1=data['frames'][i1];
-		var f2=data['frames'][i2];
-		var x,y,z;
-		var gateId;
-		for (i=0;i<maxPeople;i++) {
-			x=0;
-			y=0;
-			z=0;
-			if (a1>0&&f1['exist'][i]) {
-				x+=f1['position'][i*2  ]*a1;
-				y+=f1['position'][i*2+1]*a1;
-				gateId=f1['destGate'][i];
-				z+=a1;
+	var renderFrame=(function() {
+		var cubicInterpolation=function(x,v,t) {
+			return x+v*t+(-3*x-2*v)*t*t+(2*x+v)*t*t*t;
+		};
+		return function(iFrame) {
+			var i1=Math['floor'](iFrame);
+			var i2=i1+1;
+			var a1=i2-iFrame;
+			var a2=1-a1;
+			var i;
+			var f1=data['frames'][i1];
+			var f2=data['frames'][i2];
+			var u1;
+			var u2;
+			var x,y,z;
+			var vx,vy;
+			var gateId;
+			var timeStep=data['frame']['step']*1000
+			for (i=0;i<maxPeople;i++) {
+				x=0;
+				y=0;
+				z=0;
+				u1=a1>0&&f1['exist'][i]>0;
+				u2=a2>0&&f2['exist'][i]>0;
+				if (u1&&u2) {
+					x+=cubicInterpolation(f1['position'][i*2  ], f1['velocity'][i*2  ]*timeStep/1000,a2);
+					y+=cubicInterpolation(f1['position'][i*2+1], f1['velocity'][i*2+1]*timeStep/1000,a2);
+					x+=cubicInterpolation(f2['position'][i*2  ],-f2['velocity'][i*2  ]*timeStep/1000,a1);
+					y+=cubicInterpolation(f2['position'][i*2+1],-f2['velocity'][i*2+1]*timeStep/1000,a1);
+					gateId=f1['destGate'][i];
+					z=1;
+				}
+				if (u1&&!u2) {
+					x=f1['position'][i*2  ];
+					y=f1['position'][i*2+1];
+					gateId=f1['destGate'][i];
+					z=a1;
+				}
+				if (!u1&&u2) {
+					x=f2['position'][i*2  ];
+					y=f2['position'][i*2+1];
+					gateId=f2['destGate'][i];
+					z=a2;
+				}
+				if (!u1&&!u2) {
+					z=0;
+				}
+				rendering.calc(i,z,x,y,gateId);
 			}
-			if (a2>0&&f2['exist'][i]) {
-				x+=f2['position'][i*2  ]*a2;
-				y+=f2['position'][i*2+1]*a2;
-				gateId=f2['destGate'][i];
-				z+=a2;
-			}
-			rendering.calc(i,z,x,y,gateId);
-		}
-		rendering.render();
-	};
+			rendering.render();
+		};
+	})();
 	var createDraggable=function() {
 		var obj=d3['select']('body')['append']('span');
 		var xObj=0,yObj=0;

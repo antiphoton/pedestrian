@@ -7,14 +7,11 @@
 using std::string;
 using std::vector;
 static WallInitializer wallInitializer;
-struct WallSegment {
-	WallSegment(const Vector2 &r1,const Vector2 &r2):r1(r1),r2(r2) {
-		d12=r2-r1;
-		d12=d12*(1/sqrt(d12.lengthSqr()));
-	}
-	Vector2 r1,r2;//left side is inner side
-	Vector2 d12;
-};
+WallSegment::WallSegment(const Vector2 &r1,const Vector2 &r2):r1(r1),r2(r2) {
+	d12=r2-r1;
+	d12=d12*(1/sqrt(d12.lengthSqr()));
+	n=d12%(-1);
+}
 int nWall;
 vector<WallSegment> *walls;
 const FileParser *config;

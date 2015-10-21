@@ -98,12 +98,8 @@ void Person::move() {
 	if (!exist) {
 		return ;
 	}
-	const static double width=readConfig("playground")->getDouble("width");
-	const static double height=readConfig("playground")->getDouble("height");
 	const static double timeStep=frame.simulateStep;
 	position+=velocity*timeStep;
-	position.x-=floor(position.x/width)*width;
-	position.y-=floor(position.y/height)*height;
 	velocity+=acceleration*timeStep;
 };
 class PersonInitializer {

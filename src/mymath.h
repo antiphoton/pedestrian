@@ -32,8 +32,10 @@ struct Vector2 {
 	double operator % (const Vector2 &that) const;
 	Vector2 operator % (double z) const;
 };
+double sameSide(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &p1,const Vector2 &p2);
 bool intersect(const Vector2 &vA1,const Vector2 &vA2,const Vector2 &vB1,const Vector2 &vB2);
 Vector2 normalDistribution(const Vector2 &mu,const Vector2 &sigma);
+Vector2 uniformDistribution(const Vector2 &c,double r);
 std::ostream & operator << (std::ostream & cout,const Vector2 &v);
 struct Rect2 {
 	Rect2(double left=0,double top=0,double right=0,double bottom=0);

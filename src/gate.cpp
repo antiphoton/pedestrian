@@ -10,9 +10,7 @@ static FrameInitializer frameInitializer;
 struct GateSource {
 	Vector2 position;
 	double r;
-	double p;
 	int d;
-	int q;
 };
 struct GateSink {
 	Vector2 position;
@@ -34,7 +32,6 @@ Gates::Gates() {
 	vector<double> xSource=config->getDoubleVector("xSource");
 	vector<double> ySource=config->getDoubleVector("ySource");
 	vector<double> rSource=config->getDoubleVector("rSource");
-	vector<double> pSource=config->getDoubleVector("pSource");
 	vector<double> dSource=config->getDoubleVector("dSource");
 	vector<double> xSink=config->getDoubleVector("xSink");
 	vector<double> ySink=config->getDoubleVector("ySink");
@@ -48,9 +45,7 @@ Gates::Gates() {
 		aSource[i].position.x=xSource[i];
 		aSource[i].position.y=ySource[i];
 		aSource[i].r=rSource[i];
-		aSource[i].p=pSource[i];
 		aSource[i].d=dSource[i];
-		aSource[i].q=0;
 	}
 	for (i=0;i<nSink;i++) {
 		aSink[i].position.x=xSink[i];
@@ -67,7 +62,6 @@ void Gates::update() {
 	updateSink();
 }
 void Gates::updateSource() {
-	const static double timeStep=frame.simulateStep;
 	const vector<CellVector> *pNC;
 	int i,j,k;
 	for (i=0;i<nSource;i++) {
@@ -88,19 +82,15 @@ void Gates::updateSource() {
 				}
 			}
 		}
-		if (randomEvent(gs.p*timeStep)) {
-			gs.q++;
-		}
 		const static double maxDensity=readConfig("gate")->getDouble("sourceDensity")/sqr(readConfig("person")->getDouble("exclusionRadius"));
-		if (c<maxDensity*sqr(gs.r)&&gs.q>0) {
+		if (c<maxDensity*sqr(gs.r)) {
 			int personId=getPersonSlot();
 			if (personId>=0) {
 				people->at(personId).reset();
 				people->at(personId).id=personId;
-				people->at(personId).position.set(normalDistribution(gs.position,Vector2(gs.r/3,gs.r/3)));
+				people->at(personId).position.set(uniformDistribution(gs.position,gs.r));
 				people->at(personId).destGate=gs.d;
 				playground.addPerson(personId);
-				gs.q--;
 			}
 		}
 	}
@@ -121,7 +111,8 @@ void Gates::updateSink() {
 					break;
 				}
 				if (people->at(k).position.disSqr(gs.position)<=sqr(gs.r)) {
-					if (people->at(k).destGate==i) {
+					static bool giveup=readConfig("gate")->getDouble("giveup")!=0;
+					if (giveup||people->at(k).destGate==i) {
 						playground.deletePerson(k);
 					}
 				}
