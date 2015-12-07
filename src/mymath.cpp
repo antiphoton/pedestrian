@@ -32,11 +32,17 @@ void Vector2::setLengthSqr(double l) {
 	x*=k;
 	y*=k;
 }
+double Vector2::length() const {
+	return sqrt(sqr(x)+sqr(y));
+}
 double Vector2::lengthSqr() const {
 	return sqr(x)+sqr(y);
 }
 double Vector2::disSqr(const Vector2 &that) const {
 	return sqr(this->x-that.x)+sqr(this->y-that.y);
+}
+Vector2 Vector2 :: operator + (const Vector2 &that) const {
+	return Vector2(this->x+that.x,this->y+that.y);
 }
 Vector2 Vector2 :: operator - (const Vector2 &that) const {
 	return Vector2(this->x-that.x,this->y-that.y);

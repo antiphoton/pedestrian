@@ -13,18 +13,25 @@ using std::pair;
 using std::queue;
 using std::string;
 using std::vector;
+const static double safeDistance=readConfig("wall")->getDouble("wallSafe");
 struct CheckPoint {
 	Vector2 p;
 	double dis;
 	int w;
-	CheckPoint(const Vector2 &p,double dis,int w):p(p),dis(dis),w(w) {
+	CheckPoint(const Vector2 &p,double dis,int w):dis(dis),w(w) {
+        if (w>=0) {
+            this->p=p+walls->at(w).n*safeDistance;
+        }
+        else {
+            this->p=p;
+        }
 	}
 };
 bool separatedByWalls(const Vector2 &p1,const Vector2 &p2) {
 	int k;
 	for (k=0;k<(int)walls->size();k++) {
-		if (sameSide(walls->at(k).r1,walls->at(k).r2,p1,p2)<0
-			&&sameSide(p1,p2,walls->at(k).r1,walls->at(k).r2)<0) {
+		if (sameSide(walls->at(k).re1,walls->at(k).re2,p1,p2)<0
+			&&sameSide(p1,p2,walls->at(k).re1,walls->at(k).re2)<0) {
 			return true;
 		}
 	}

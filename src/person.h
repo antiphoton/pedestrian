@@ -3,6 +3,8 @@
 struct Person {
 	int id;
 	Vector2 position,velocity,acceleration;
+    Vector2 tendency;
+    bool stopped;
 	bool exist;
 	bool safeToAdd;
 	int destGate;

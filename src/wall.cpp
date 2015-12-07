@@ -8,8 +8,11 @@ using std::string;
 using std::vector;
 static WallInitializer wallInitializer;
 WallSegment::WallSegment(const Vector2 &r1,const Vector2 &r2):r1(r1),r2(r2) {
+    const static double safeDistance=readConfig("wall")->getDouble("wallSafe");
 	d12=r2-r1;
 	d12=d12*(1/sqrt(d12.lengthSqr()));
+    re1=r1+d12*(-safeDistance);
+    re2=r2+d12*(+safeDistance);
 	n=d12%(-1);
 }
 int nWall;

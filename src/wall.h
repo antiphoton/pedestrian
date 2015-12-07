@@ -2,6 +2,7 @@
 struct WallSegment {
 	WallSegment(const Vector2 &r1,const Vector2 &r2);
 	Vector2 r1,r2;//left side is inner side
+    Vector2 re1,re2;
 	Vector2 d12;
 	Vector2 n;
 };

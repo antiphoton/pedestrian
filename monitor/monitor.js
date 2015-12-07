@@ -1,4 +1,39 @@
 (function() {
+    var GET=(function() {
+        var readGetParams=function() {
+            var ret={};
+            var s=location['search']['substring'](1);
+            var a=s['split']('&');
+            var i,j;
+            for (i=0;i<a['length'];i++) {
+                j=a[i]['indexOf']('=');
+                if (j===-1) {
+                    j=a[i]['length'];
+                }
+                if (j===0) {
+                    continue;
+                }
+                ret[decodeURIComponent(a[i]['substring'](0,j))]=decodeURIComponent(a[i]['substring'](j+1));
+            }
+            return ret;
+        };
+        var writeGetParams=function(data) {
+            var s=[];
+            var i;
+            for (i in data) {
+                s['push'](encodeURIComponent(i)+'='+encodeURIComponent(''+data[i]));
+            }
+            return s['join']('&');
+        };
+        return function(data) {
+            if (data===undefined) {
+                return readGetParams();
+            }
+            else {
+                return writeGetParams(data);
+            }
+        };
+    })();
 	var getTime=function() {
 		return new Date()['getTime']();
 	};
@@ -94,7 +129,21 @@
 			fileReader['onload']=onFileLoaded;
 			fileReader['readAsText'](file);
 		};
-		var init=function() {
+        var initServerTrajectory=function() {
+            d3['json'](
+                './out.trajectory.json',
+                function(a) {
+                    if (a) {
+                        data=a;
+                        onSuccess();
+                    }
+                    else {
+                        onError('Server trajectory file in unavailable.');
+                    }
+                }
+            );
+        };
+		var initClientTrajectory=function() {
 			var body=d3['select']('body');
 			body['on']('dragenter',dragenter,false);
 			body['on']('dragover',dragover,false);
@@ -107,20 +156,17 @@
 			iStatus=container['append']('p')['append']('i')['classed']('fa',true);
 			setWaitingStatus();
 		};
+		var init=function() {
+            if (GET()['server_trajectory']!==undefined) {
+                initServerTrajectory();
+            }
+            initClientTrajectory();
+        };
 		return {//loadingScreen
 			init:init
 		};
 	})();
 	var data;
-	var loadJsonData=(function() {
-		return function() {
-			d3['json'](
-				'./out.trajectory.json',
-				function(a) {
-				}
-			);
-		};
-	})();
 	var parseBase64=(function() {
 		var parseByte=function(s) {
 			return base64js['toByteArray'](s);
@@ -213,7 +259,7 @@
 				p=fixByRange(a[1],pRange,1);
 				x=fixByRange(a[2],xRange);
 				y=fixByRange(a[3],yRange);
-				c=0;//fixByRange(a[4],cRange,1);
+				c=fixByRange(a[4],cRange,1);
 				vX=fixByRange(a[5],[0]);
 				vY=fixByRange(a[6],[0]);
 				cur=data["frames"][t];
@@ -228,7 +274,7 @@
 	})();
 	var maxPeople,totalFrame;
 	var backgroundColor='efefef';
-	var peopleColor=['0000ff','ff0000'];
+	var peopleColor=['0000ff','ff8c00','ff0000','006400'];
 	var svgRendering=(function() {
 		var svg;
 		var container;
@@ -403,6 +449,7 @@
 	var rendering=threeRendering;
 	var renderFrame=(function() {
 		var cubicInterpolation=function(x,v,t) {
+            return x*(1-t);
 			return x+v*t+(-3*x-2*v)*t*t+(2*x+v)*t*t*t;
 		};
 		return function(iFrame) {

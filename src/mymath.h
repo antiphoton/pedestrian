@@ -23,8 +23,10 @@ struct Vector2 {
 	void set(double x,double y);
 	void set(const Vector2 &v);
 	void setLengthSqr(double l);
+	double length() const;
 	double lengthSqr() const;
 	double disSqr(const Vector2 &that) const;
+	Vector2 operator + (const Vector2 &that) const;
 	Vector2 operator - (const Vector2 &that) const;
 	Vector2 & operator += (const Vector2 &that);
 	Vector2 operator * (double k) const;
