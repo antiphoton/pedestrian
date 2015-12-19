@@ -6,5 +6,5 @@ main.pdf : main.tex
 	bibtex main.aux
 	latex main.tex
 	latex main.tex
-	dvipdf main
+	pdflatex main
 
