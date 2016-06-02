@@ -1,4 +1,4 @@
-CC=mpicxx -cxx=g++ -std=c++0x -Wall -O3
+CC=g++ -std=c++0x -Wall -O3 -DNOMPI
 pedestrian.out : main.o gravity.o frame.o gate.o mymath.o mympi.o mytime.o person.o playground.o reading.o trajectory.o wall.o
 	$(CC) -o pedestrian.out main.o frame.o gravity.o gate.o mymath.o mympi.o mytime.o person.o playground.o reading.o trajectory.o wall.o
 main.o : main.cpp
@@ -12,7 +12,7 @@ gate.o : gate.cpp
 mymath.o : mymath.cpp
 	$(CC) -o mymath.o -c mymath.cpp
 mympi.o : mympi.cpp
-	$(CC) -o mympi.o -c mympi.cpp -DNOMPI
+	$(CC) -o mympi.o -c mympi.cpp
 mytime.o : mytime.cpp
 	$(CC) -o mytime.o -c mytime.cpp
 person.o : person.cpp
