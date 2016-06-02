@@ -12,7 +12,7 @@ gate.o : gate.cpp
 mymath.o : mymath.cpp
 	$(CC) -o mymath.o -c mymath.cpp
 mympi.o : mympi.cpp
-	$(CC) -o mympi.o -c mympi.cpp
+	$(CC) -o mympi.o -c mympi.cpp -DNOMPI
 mytime.o : mytime.cpp
 	$(CC) -o mytime.o -c mytime.cpp
 person.o : person.cpp

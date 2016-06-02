@@ -17,25 +17,32 @@ int getMpiRank() {
 static int globalInstanceCount=0;
 MpiGlobalInstance::MpiGlobalInstance() {
 	if (globalInstanceCount==0) {
+        #ifdef NOMPI
+            mpiGlobal.size=1;
+        #else
 		int argc=0;
 		char **argv=new char*[0];
 		MPI_Init(&argc,&argv);
 		delete[] argv;
 		MPI_Comm_rank(MPI_COMM_WORLD,&mpiGlobal.rank);
 		MPI_Comm_size(MPI_COMM_WORLD,&mpiGlobal.size);
+        #endif
 	}
 	globalInstanceCount++;
 }
 MpiGlobalInstance::~MpiGlobalInstance() {
 	globalInstanceCount--;
 	if (globalInstanceCount==0) {
+        #ifndef NOMPI
 		MPI_Finalize();
+        #endif
 	}
 }
 void mpiSync() {
 	if (mpiGlobal.size==1) {
 		return ;
 	}
+    #ifndef NOMPI
 	if (mpiGlobal.rank==0) {
 		int i;
 		for (i=1;i<mpiGlobal.size;i++) {
@@ -48,6 +55,7 @@ void mpiSync() {
 		int x;
 		MPI_Send(&x,1,MPI_INT,0,MPI_SYNC,MPI_COMM_WORLD);
 	}
+    #endif
 };
 void normalizeVector(vector<double> &a) {
 	int n=a.size();
@@ -119,6 +127,7 @@ int MpiTaskManager::apply() {
 			return -1;
 		}
 	}
+    #ifndef NOMPI
 	if (mpiGlobal.rank==0) {
 		return -1;
 	}
@@ -127,11 +136,13 @@ int MpiTaskManager::apply() {
 	MPI_Send(&x,1,MPI_INT,0,MPI_TASK_APPLY,MPI_COMM_WORLD);
 	MPI_Recv(&x,1,MPI_INT,0,MPI_TASK_APPLY,MPI_COMM_WORLD,&stat);
 	return x;
+    #endif
 }
 void MpiTaskManager::listen() {
 	if (mpiGlobal.size==1) {
 		return ;
 	}
+    #ifndef NOMPI
 	int nFinished=0;
 	vector<bool> cpuWaiting(mpiGlobal.size,false);
 	vector<int> cpuLastTask(mpiGlobal.size,-1);
@@ -193,6 +204,7 @@ void MpiTaskManager::listen() {
 		cpuStarttime[stat.MPI_SOURCE]=now;
 		MPI_Send(&ret,1,MPI_INT,stat.MPI_SOURCE,MPI_TASK_APPLY,MPI_COMM_WORLD);
 	}
+    #endif
 }
 void MpiTaskManager::write() {
 
@@ -202,6 +214,7 @@ MpiSharedMemory::MpiSharedMemory(int size) {
 		p=malloc(size);
 		return ;
 	}
+    #ifndef NOMPI
 	int shmid;
 	if (mpiGlobal.rank==0) {
 		shmid=shmget(0,size,IPC_CREAT|0666);
@@ -215,14 +228,17 @@ MpiSharedMemory::MpiSharedMemory(int size) {
 		MPI_Recv(&shmid,1,MPI_INT,0,MPI_MEMORY_READY,MPI_COMM_WORLD,&stat);
 	}
 	p=(unsigned char*) shmat(shmid,NULL,0);
+    #endif
 }
 MpiSharedMemory::~MpiSharedMemory() {
 	if (mpiGlobal.size==1) {
 		free(p);
 		return ;
 	}
+    #ifndef NOMPI
 	mpiSync();
 	shmdt(p);
+    #endif
 }
 void *MpiSharedMemory::address() const {
 	return p;
@@ -233,6 +249,7 @@ SingleThreadLocker::SingleThreadLocker(bool includingHead):includingHead(includi
 	if (mpiGlobal.size==1) {
 		return ;
 	}
+    #ifndef NOMPI
 	if (!includingHead&&mpiGlobal.rank==0) {
 		return ;
 	}
@@ -251,6 +268,7 @@ SingleThreadLocker::SingleThreadLocker(bool includingHead):includingHead(includi
 		int x;
 		MPI_Send(&x,1,MPI_INT,WORKING_RANK,MPI_SINGLETHREAD,MPI_COMM_WORLD);
 	}
+    #endif
 }
 bool SingleThreadLocker::myDuty() {
 	if (finished) {
@@ -260,12 +278,15 @@ bool SingleThreadLocker::myDuty() {
 	if (mpiGlobal.size==1) {
 		return true;
 	}
+    #ifndef NOMPI
 	return mpiGlobal.rank==WORKING_RANK;
+    #endif
 }
 SingleThreadLocker::~SingleThreadLocker() {
 	if (mpiGlobal.size==1) {
 		return ;
 	}
+    #ifndef NOMPI
 	if (!includingHead&&mpiGlobal.rank==0) {
 		return ;
 	}
@@ -284,6 +305,7 @@ SingleThreadLocker::~SingleThreadLocker() {
 		int x;
 		MPI_Recv(&x,1,MPI_INT,WORKING_RANK,MPI_SINGLETHREAD,MPI_COMM_WORLD,&stat);
 	}
+    #endif
 }
 ParallelHistogram::ParallelHistogram(const bool logScale,const bool clamped,const double min,const double max,const int count,const string &filename):logScale(logScale),clamped(clamped),min(logScale?log(min):min),max(logScale?log(max):max),count(count),filename(filename) {
 	a=new long[count];
@@ -316,6 +338,7 @@ void ParallelHistogram::tip(double x) {
 	a[i]++;
 }
 void ParallelHistogram::merge() {
+    #ifndef NOMPI
 	if (!mpiGlobal.rank==0) {
 		MPI_Send(a,count*8,MPI_CHAR,0,MPI_HIST_MERGE,MPI_COMM_WORLD);
 	}
@@ -344,6 +367,7 @@ void ParallelHistogram::merge() {
 		mu=sum1/total;
 		sigma=sqrt(sum2/total-mu*mu);
 	}
+    #endif
 };
 void ParallelHistogram::write() const {
 	if (!mpiGlobal.rank==0) {
